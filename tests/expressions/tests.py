@@ -149,6 +149,97 @@ class BasicExpressionsTests(TestCase):
             ],
         )
 
+    def test_slicing_of_f_expressions(self):
+        tests = [
+            (F('name')[:], 'Example Inc.', 'Example Inc.'),
+            (F('name')[:7], 'Example Inc.', 'Example'),
+            (F('name')[0], 'Example', 'E'),
+            (F('name')[5], 'E', ''),
+            (F('name')[7:], 'Foobar Ltd.', 'Ltd.'),
+            (F('name')[0:10], 'Ltd.', 'Ltd.'),
+            (F('name')[2:7], 'Test GmbH', 'st Gm'),
+            (F('name')[2:2], 'st Gm', ''),
+        ]
+        for expression, name, expected in tests:
+            with self.subTest(expression=expression, name=name, expected=expected):
+                company = Company.objects.get(name=name)
+                company.name = expression
+                company.save()
+                company.refresh_from_db()
+                self.assertEqual(company.name, expected)
+
+    def test_slicing_of_f_expressions_with_annotate(self):
+        companies = Company.objects.annotate(first_three=F('name')[:3])
+        self.assertSequenceEqual(
+            companies.values_list('first_three', flat=True),
+            ['Exa', 'Foo', 'Tes'],
+        )
+        companies = Company.objects.annotate(after_three=F('name')[3:])
+        self.assertSequenceEqual(
+            companies.values_list('after_three', flat=True),
+            ['mple Inc.', 'bar Ltd.', 't GmbH'],
+        )
+        companies = Company.objects.annotate(random_four=F('name')[2:5])
+        self.assertSequenceEqual(
+            companies.values_list('random_four', flat=True),
+            ['amp', 'oba', 'st '],
+        )
+        companies = Company.objects.annotate(first_letter=F('name')[:1])
+        self.assertSequenceEqual(
+            companies.values_list('first_letter', flat=True),
+            ['E', 'F', 'T'],
+        )
+        companies = Company.objects.annotate(first_letter=F('name')[0])
+        self.assertSequenceEqual(
+            companies.values_list('first_letter', flat=True),
+            ['E', 'F', 'T'],
+        )
+
+    def test_slicing_of_f_expressions_with_negative_index(self):
+        msg = "Negative indexing is not supported."
+        slices = [slice(0, -4), slice(-4, 0), slice(-4)]
+        for s in slices:
+            with self.subTest(s=s):
+                with self.assertRaisesMessage(ValueError, msg):
+                    F('name')[s]
+
+    def test_slicing_of_f_expressions_with_slice_stop_less_than_slice_start(self):
+        msg = "Slice stop must be greater than slice start"
+        with self.assertRaisesMessage(ValueError, msg):
+            F('name')[4:2]
+
+    def test_slicing_of_f_expressions_with_invalid_type(self):
+        msg = "Argument to slice must be either int or slice instance."
+        with self.assertRaisesMessage(TypeError, msg):
+            F('name')['error']
+
+    def test_slicing_of_f_expressions_with_step(self):
+        msg = "Step argument is not supported."
+        with self.assertRaisesMessage(ValueError, msg):
+            F('name')[::4]
+
+    def test_invalid_fields_in_slicing_f_expressions(self):
+        start = datetime.datetime(2016, 2, 3, 15, 0, 0)
+        end = datetime.datetime(2016, 2, 5, 15, 0, 0)
+        Experiment.objects.create(
+            name='Integrity testing',
+            assigned=start.date(),
+            start=start,
+            end=end,
+            completed=end.date(),
+            estimated_time=end - start,
+        )
+        experiment_1 = Experiment.objects.filter(name='Integrity testing')
+        msg = 'This field does not support slicing.'
+        with self.assertRaisesMessage(NotSupportedError, msg):
+            experiment_1.update(assigned=F('assigned')[:2])  # DateField
+        with self.assertRaisesMessage(NotSupportedError, msg):
+            experiment_1.update(start=F('start')[:2])  # DateTimeField
+        with self.assertRaisesMessage(NotSupportedError, msg):
+            experiment_1.update(estimated_time=F('estimated_time')[:2])  # DurationField
+        with self.assertRaisesMessage(NotSupportedError, msg):
+            experiment_1.update(scalar=F('scalar')[:2])  # IntegerField
+
     def test_arithmetic(self):
         # We can perform arithmetic operations in expressions
         # Make sure we have 2 spare chairs
@@ -1907,6 +1998,7 @@ class ReprTests(SimpleTestCase):
         )
         self.assertEqual(repr(Col('alias', 'field')), "Col(alias, field)")
         self.assertEqual(repr(F('published')), "F(published)")
+        self.assertEqual(repr(F('published')[0:2]), "SliceableF(published)")
         self.assertEqual(repr(F('cost') + F('tax')), "<CombinedExpression: F(cost) + F(tax)>")
         self.assertEqual(
             repr(ExpressionWrapper(F('cost') + F('tax'), IntegerField())),

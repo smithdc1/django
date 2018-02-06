@@ -157,6 +157,11 @@ class ArrayField(CheckFieldDefaultMixin, Field):
         else:
             return SliceTransformFactory(start, end)
 
+    def slice_expression(self, expression, start, length):
+        # If length is not provided, don't specify an end to slice to the end of the array.
+        end = '' if length is None else start + length - 1
+        return SliceTransform(start, end, expression)
+
     def validate(self, value, model_instance):
         super().validate(value, model_instance)
         for index, part in enumerate(value):
