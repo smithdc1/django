@@ -23,7 +23,7 @@ def hashed_file_path(test, path):
     return fullpath.replace(settings.STATIC_URL, '')
 
 
-class TestHashedFiles:
+class HashedFilesTest:
     hashed_file_path = hashed_file_path
 
     def setUp(self):
@@ -262,7 +262,7 @@ class TestExtraPatternsStorage(CollectionTestCase):
 @override_settings(
     STATICFILES_STORAGE='django.contrib.staticfiles.storage.ManifestStaticFilesStorage',
 )
-class TestCollectionManifestStorage(TestHashedFiles, CollectionTestCase):
+class TestCollectionManifestStorage(HashedFilesTest, CollectionTestCase):
     """
     Tests for the Cache busting storage
     """
