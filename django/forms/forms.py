@@ -13,7 +13,7 @@ from django.utils.functional import cached_property
 from django.utils.html import conditional_escape, html_safe
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _
-
+import time
 from .renderers import get_default_renderer
 
 __all__ = ('BaseForm', 'Form')
@@ -30,6 +30,7 @@ class DeclarativeFieldsMetaclass(MediaDefiningClass):
         for key in current_fields:
             attrs.pop(key)
 
+        time.sleep(2)
         attrs['declared_fields'] = current_fields
 
         new_class = super().__new__(mcs, name, bases, attrs)
