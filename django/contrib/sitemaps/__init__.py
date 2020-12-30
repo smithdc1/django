@@ -145,6 +145,10 @@ class Sitemap:
         domain = self.get_domain(site)
         return self._urls(page, protocol, domain)
 
+    def get_latest_lastmod(self):
+        if hasattr(self, 'lastmod') and not callable(self.lastmod):
+            return self.lastmod
+
     def _urls(self, page, protocol, domain):
         urls = []
         latest_lastmod = None
@@ -214,4 +218,9 @@ class GenericSitemap(Sitemap):
     def lastmod(self, item):
         if self.date_field is not None:
             return getattr(item, self.date_field)
+        return None
+
+    def get_latest_lastmod(self):
+        if self.date_field is not None:
+            return self.queryset.order_by('-' + self.date_field).values_list(self.date_field, flat=True).first()
         return None

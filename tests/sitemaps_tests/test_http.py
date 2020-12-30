@@ -23,9 +23,9 @@ class HTTPSitemapTests(SitemapTestsBase):
         response = self.client.get('/simple/index.xml')
         expected_content = """<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-<sitemap><loc>%s/simple/sitemap-simple.xml</loc></sitemap>
+<sitemap><loc>%s/simple/sitemap-simple.xml</loc><lastmod>%s</lastmod></sitemap>
 </sitemapindex>
-""" % self.base_url
+""" % (self.base_url, date.today())
         self.assertXMLEqual(response.content.decode(), expected_content)
 
     def test_sitemap_not_callable(self):
@@ -33,9 +33,9 @@ class HTTPSitemapTests(SitemapTestsBase):
         response = self.client.get('/simple-not-callable/index.xml')
         expected_content = """<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-<sitemap><loc>%s/simple/sitemap-simple.xml</loc></sitemap>
+<sitemap><loc>%s/simple/sitemap-simple.xml</loc><lastmod>%s</lastmod></sitemap>
 </sitemapindex>
-""" % self.base_url
+""" % (self.base_url, date.today())
         self.assertXMLEqual(response.content.decode(), expected_content)
 
     def test_paged_sitemap(self):
@@ -43,9 +43,9 @@ class HTTPSitemapTests(SitemapTestsBase):
         response = self.client.get('/simple-paged/index.xml')
         expected_content = """<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-<sitemap><loc>{0}/simple/sitemap-simple.xml</loc></sitemap><sitemap><loc>{0}/simple/sitemap-simple.xml?p=2</loc></sitemap>
+<sitemap><loc>{0}/simple/sitemap-simple.xml</loc><lastmod>2021-03-01</lastmod></sitemap><sitemap><loc>{0}/simple/sitemap-simple.xml?p=2</loc><lastmod>{1}</lastmod></sitemap>
 </sitemapindex>
-""".format(self.base_url)
+""".format(self.base_url, date.today())
         self.assertXMLEqual(response.content.decode(), expected_content)
 
     @override_settings(TEMPLATES=[{
@@ -60,7 +60,22 @@ class HTTPSitemapTests(SitemapTestsBase):
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <sitemap><loc>%s/simple/sitemap-simple.xml</loc></sitemap>
 </sitemapindex>
-""" % self.base_url
+""" % (self.base_url)
+        self.assertXMLEqual(response.content.decode(), expected_content)
+
+    @override_settings(TEMPLATES=[{
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [os.path.join(os.path.dirname(__file__), 'templates')],
+    }])
+    def test_simple_sitemap_custom_lastmod_index(self):
+        "A simple sitemap index can be rendered with a custom template"
+        response = self.client.get('/simple/custom-lastmod-index.xml')
+        expected_content = """<?xml version="1.0" encoding="UTF-8"?>
+<!-- This is a customised template -->
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<sitemap><loc>%s/simple/sitemap-simple.xml</loc><lastmod>%s</lastmod></sitemap>
+</sitemapindex>
+""" % (self.base_url, date.today())
         self.assertXMLEqual(response.content.decode(), expected_content)
 
     def test_simple_sitemap_section(self):
@@ -175,6 +190,30 @@ class HTTPSitemapTests(SitemapTestsBase):
         response = self.client.get('/lastmod-sitemaps/descending.xml')
         self.assertEqual(response.headers['Last-Modified'], 'Sat, 20 Apr 2013 05:00:00 GMT')
 
+    def test_sitemap_get_latest_lastmod_none(self):
+        """
+        sitemapindex.lastmod is ommitted when Sitemap.lastmod is
+        callable and Sitemap.get_latest_lastmod is not implemented
+        """
+        response = self.client.get('/lastmod/get-latest-lastmod-none-sitemap.xml')
+        self.assertNotContains(response, '<lastmod>')
+
+    def test_sitemap_get_latest_lastmod(self):
+        """
+        sitemapindex.lastmod is included when Sitemap.lastmod is
+        attribute and Sitemap.get_latest_lastmod is implemented
+        """
+        response = self.client.get('/lastmod/get-latest-lastmod-sitemap.xml')
+        self.assertContains(response, '<lastmod>2013-03-13T10:00:00</lastmod>')
+
+    def test_sitemap_latest_lastmod_timezone(self):
+        """
+        lastmod datestamp shows timezones if Sitemap.get_latest_lastmod
+        returns an aware datetime.
+        """
+        response = self.client.get('/lastmod/latest-lastmod-timezone-sitemap.xml')
+        self.assertContains(response, '<lastmod>2013-03-13T10:00:00-05:00</lastmod>')
+
     @override_settings(USE_I18N=True, USE_L10N=True)
     def test_localized_priority(self):
         """The priority value should not be localized."""
@@ -236,9 +275,9 @@ class HTTPSitemapTests(SitemapTestsBase):
         response = self.client.get('/cached/index.xml')
         expected_content = """<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-<sitemap><loc>%s/cached/sitemap-simple.xml</loc></sitemap>
+<sitemap><loc>%s/cached/sitemap-simple.xml</loc><lastmod>%s</lastmod></sitemap>
 </sitemapindex>
-""" % self.base_url
+""" % (self.base_url, date.today())
         self.assertXMLEqual(response.content.decode(), expected_content)
 
     def test_x_robots_sitemap(self):

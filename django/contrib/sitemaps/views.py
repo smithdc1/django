@@ -10,6 +10,15 @@ from django.urls import reverse
 from django.utils.http import http_date
 
 
+class SiteData:
+    def __init__(self, location, last_mod=None):
+        self.location = location
+        self.last_mod = last_mod
+
+    def __str__(self):
+        return self.location
+
+
 def x_robots_tag(func):
     @wraps(func)
     def inner(request, *args, **kwargs):
@@ -36,11 +45,15 @@ def index(request, sitemaps,
         protocol = req_protocol if site.protocol is None else site.protocol
         sitemap_url = reverse(sitemap_url_name, kwargs={'section': section})
         absolute_url = '%s://%s%s' % (protocol, req_site.domain, sitemap_url)
-        sites.append(absolute_url)
+        sites.append(SiteData(absolute_url, site.get_latest_lastmod()))
         # Add links to all pages of the sitemap.
         for page in range(2, site.paginator.num_pages + 1):
-            sites.append('%s?p=%s' % (absolute_url, page))
-
+            sites.append(
+                SiteData(
+                    '%s?p=%s' % (absolute_url, page),
+                    site.get_latest_lastmod(),
+                )
+            )
     return TemplateResponse(request, template_name, {'sitemaps': sites},
                             content_type=content_type)
 

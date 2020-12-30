@@ -286,6 +286,21 @@ Note:
         fallback entry with a value of :setting:`LANGUAGE_CODE`. The default is
         ``False``.
 
+    .. method:: Sitemap.get_latest_lastmod()
+
+        .. versionadded:: 4.0
+
+        **Optional.** A method that returns the latest value returned by
+        :attr:`~Sitemap.lastmod()`. This function is used to add the
+        ``lastmod`` attribute to
+        :ref:`Sitemap index context variables<Sitemap index variables>`.
+
+        By default :meth:`~Sitemap.get_latest_lastmod()` returns:
+
+        * If :attr:`~Sitemap.lastmod` is an attribute:
+          :attr:`~Sitemap.lastmod`.
+        * If :attr:`~Sitemap.lastmod` is a method: ``None``.
+
 Shortcuts
 =========
 
@@ -298,7 +313,8 @@ The sitemap framework provides a convenience class for a common case:
     a ``queryset`` entry. This queryset will be used to generate the items
     of the sitemap. It may also have a ``date_field`` entry that
     specifies a date field for objects retrieved from the ``queryset``.
-    This will be used for the :attr:`~Sitemap.lastmod` attribute in the
+    This will be used for the :attr:`~Sitemap.lastmod` attribute and
+    :attr:`~Sitemap.get_latest_lastmod()` methods in the in the
     generated sitemap.
 
     The :attr:`~Sitemap.priority`, :attr:`~Sitemap.changefreq`,
@@ -460,10 +476,23 @@ When customizing the templates for the
 :func:`~django.contrib.sitemaps.views.sitemap` views, you can rely on the
 following context variables.
 
+.. _Sitemap index variables:
+
 Index
 -----
 
 The variable ``sitemaps`` is a list of absolute URLs to each of the sitemaps.
+Each URL exposes the following attributes:
+
+- ``location``
+- ``lastmod``
+
+``lastmod`` attributes are added via by the
+:meth:`~Sitemap.get_latest_lastmod()` method for each sitemap.
+
+    .. versionchanged:: 4.0
+
+    The ``lastmod`` attribute was added.
 
 Sitemap
 -------
