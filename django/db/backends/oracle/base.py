@@ -8,6 +8,7 @@ import decimal
 import os
 import platform
 from contextlib import contextmanager
+from functools import cached_property
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
@@ -15,7 +16,6 @@ from django.db import IntegrityError
 from django.db.backends.base.base import BaseDatabaseWrapper
 from django.utils.asyncio import async_unsafe
 from django.utils.encoding import force_bytes, force_str
-from django.utils.functional import cached_property
 
 
 def _setup_environment(environ):

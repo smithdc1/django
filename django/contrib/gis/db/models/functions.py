@@ -1,4 +1,5 @@
 from decimal import Decimal
+from functools import cached_property
 
 from django.contrib.gis.db.models.fields import BaseSpatialField, GeometryField
 from django.contrib.gis.db.models.sql import AreaField, DistanceField
@@ -10,7 +11,6 @@ from django.db.models import (
     Transform, Value,
 )
 from django.db.models.functions import Cast
-from django.utils.functional import cached_property
 
 NUMERIC_TYPES = (int, float, Decimal)
 

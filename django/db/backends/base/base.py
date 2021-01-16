@@ -5,6 +5,7 @@ import time
 import warnings
 from collections import deque
 from contextlib import contextmanager
+from functools import cached_property
 
 import pytz
 
@@ -18,7 +19,6 @@ from django.db.transaction import TransactionManagementError
 from django.db.utils import DatabaseErrorWrapper
 from django.utils import timezone
 from django.utils.asyncio import async_unsafe
-from django.utils.functional import cached_property
 
 NO_DB_ALIAS = '__no_db__'
 

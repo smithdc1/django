@@ -63,13 +63,14 @@ and two directions (forward and reverse) for a total of six combinations.
    ``ReverseManyToManyDescriptor``, use ``ManyToManyDescriptor`` instead.
 """
 
+from functools import cached_property
+
 from django.core.exceptions import FieldError
 from django.db import connections, router, transaction
 from django.db.models import Q, signals
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import DeferredAttribute
 from django.db.models.utils import resolve_callables
-from django.utils.functional import cached_property
 
 
 class ForeignKeyDeferredAttribute(DeferredAttribute):

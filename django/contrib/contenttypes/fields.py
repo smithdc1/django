@@ -2,6 +2,7 @@ import functools
 import itertools
 import operator
 from collections import defaultdict
+from functools import cached_property
 
 from django.contrib.contenttypes.models import ContentType
 from django.core import checks
@@ -14,7 +15,6 @@ from django.db.models.fields.related import (
     ReverseManyToOneDescriptor, lazy_related_operation,
 )
 from django.db.models.query_utils import PathInfo
-from django.utils.functional import cached_property
 
 
 class GenericForeignKey(FieldCacheMixin):

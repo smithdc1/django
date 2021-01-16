@@ -1,9 +1,9 @@
 import datetime
 import re
+from functools import cached_property
 
 from django.forms.utils import flatatt, pretty_name
 from django.forms.widgets import Textarea, TextInput
-from django.utils.functional import cached_property
 from django.utils.html import conditional_escape, format_html, html_safe
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _

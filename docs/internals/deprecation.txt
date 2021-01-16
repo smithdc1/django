@@ -17,6 +17,8 @@ details on these changes.
 
 .. _deprecation-removed-in-4.1:
 
+* ``django.utils.functional.cached_property`` will be removed.
+
 4.1
 ---
 

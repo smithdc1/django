@@ -5,6 +5,7 @@ The main QuerySet implementation. This provides the public API for the ORM.
 import copy
 import operator
 import warnings
+from functools import cached_property
 from itertools import chain
 
 import django
@@ -23,7 +24,7 @@ from django.db.models.query_utils import FilteredRelation, Q
 from django.db.models.sql.constants import CURSOR, GET_ITERATOR_CHUNK_SIZE
 from django.db.models.utils import create_namedtuple_class, resolve_callables
 from django.utils import timezone
-from django.utils.functional import cached_property, partition
+from django.utils.functional import partition
 
 # The maximum number of results to fetch in a get() query.
 MAX_GET_RESULTS = 21

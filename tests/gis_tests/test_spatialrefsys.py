@@ -1,8 +1,8 @@
 import re
+from functools import cached_property
 
 from django.db import connection
 from django.test import TestCase, skipUnlessDBFeature
-from django.utils.functional import cached_property
 
 test_srs = ({
     'srid': 4326,

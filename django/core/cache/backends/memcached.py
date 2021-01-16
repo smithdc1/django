@@ -4,12 +4,12 @@ import pickle
 import re
 import time
 import warnings
+from functools import cached_property
 
 from django.core.cache.backends.base import (
     DEFAULT_TIMEOUT, BaseCache, InvalidCacheKey, memcache_key_warnings,
 )
 from django.utils.deprecation import RemovedInDjango41Warning
-from django.utils.functional import cached_property
 
 
 class BaseMemcachedCache(BaseCache):

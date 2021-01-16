@@ -2,7 +2,7 @@ import glob
 import os
 import re
 import sys
-from functools import total_ordering
+from functools import cached_property, total_ordering
 from itertools import dropwhile
 
 import django
@@ -14,7 +14,6 @@ from django.core.management.utils import (
     find_command, handle_extensions, is_ignored_path, popen_wrapper,
 )
 from django.utils.encoding import DEFAULT_LOCALE_ENCODING
-from django.utils.functional import cached_property
 from django.utils.jslex import prepare_js_for_gettext
 from django.utils.regex_helper import _lazy_re_compile
 from django.utils.text import get_text_list

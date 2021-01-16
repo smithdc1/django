@@ -1,6 +1,7 @@
+from functools import cached_property
+
 from django.db import NotSupportedError
 from django.db.models import Func, Index
-from django.utils.functional import cached_property
 
 __all__ = [
     'BloomIndex', 'BrinIndex', 'BTreeIndex', 'GinIndex', 'GistIndex',

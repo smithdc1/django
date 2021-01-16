@@ -1,4 +1,5 @@
 from collections import namedtuple
+from functools import cached_property
 
 import cx_Oracle
 
@@ -6,7 +7,6 @@ from django.db import models
 from django.db.backends.base.introspection import (
     BaseDatabaseIntrospection, FieldInfo as BaseFieldInfo, TableInfo,
 )
-from django.utils.functional import cached_property
 
 FieldInfo = namedtuple('FieldInfo', BaseFieldInfo._fields + ('is_autofield', 'is_json'))
 

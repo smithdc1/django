@@ -1,4 +1,5 @@
 import uuid
+from functools import cached_property
 
 from django.contrib.contenttypes.fields import (
     GenericForeignKey, GenericRelation,
@@ -6,7 +7,6 @@ from django.contrib.contenttypes.fields import (
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models.query import ModelIterable
-from django.utils.functional import cached_property
 
 
 class Author(models.Model):

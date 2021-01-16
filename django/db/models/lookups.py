@@ -1,6 +1,7 @@
 import itertools
 import math
 from copy import copy
+from functools import cached_property
 
 from django.core.exceptions import EmptyResultSet
 from django.db.models.expressions import Case, Exists, Func, Value, When
@@ -9,7 +10,6 @@ from django.db.models.fields import (
 )
 from django.db.models.query_utils import RegisterLookupMixin
 from django.utils.datastructures import OrderedSet
-from django.utils.functional import cached_property
 from django.utils.hashable import make_hashable
 
 

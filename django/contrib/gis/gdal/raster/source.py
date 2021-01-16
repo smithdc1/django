@@ -5,6 +5,7 @@ import uuid
 from ctypes import (
     addressof, byref, c_buffer, c_char_p, c_double, c_int, c_void_p, string_at,
 )
+from functools import cached_property
 
 from django.contrib.gis.gdal.driver import Driver
 from django.contrib.gis.gdal.error import GDALException
@@ -18,7 +19,6 @@ from django.contrib.gis.gdal.raster.const import (
 from django.contrib.gis.gdal.srs import SpatialReference, SRSException
 from django.contrib.gis.geometry import json_regex
 from django.utils.encoding import force_bytes, force_str
-from django.utils.functional import cached_property
 
 
 class TransformPoint(list):

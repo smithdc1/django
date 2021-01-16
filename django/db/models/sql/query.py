@@ -12,6 +12,7 @@ import functools
 import sys
 from collections import Counter, namedtuple
 from collections.abc import Iterator, Mapping
+from functools import cached_property
 from itertools import chain, count, product
 from string import ascii_uppercase
 
@@ -36,6 +37,7 @@ from django.db.models.sql.where import (
     AND, OR, ExtraWhere, NothingNode, WhereNode,
 )
 from django.utils.functional import cached_property
+from django.utils.deprecation import RemovedInDjango40Warning
 from django.utils.hashable import make_hashable
 from django.utils.tree import Node
 

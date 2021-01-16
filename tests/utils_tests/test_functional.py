@@ -1,6 +1,7 @@
 from unittest import mock
 
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, ignore_warnings
+from django.utils.deprecation import RemovedInDjango50Warning
 from django.utils.functional import cached_property, classproperty, lazy
 
 
@@ -80,6 +81,7 @@ class FunctionalTests(SimpleTestCase):
             self.assertTrue(callable(obj.other_value))
             self.assertTrue(callable(subobj.other_value))
 
+    @ignore_warnings(category=RemovedInDjango50Warning)
     def test_cached_property(self):
         """cached_property caches its value and behaves like a property."""
         class Class:
@@ -97,12 +99,13 @@ class FunctionalTests(SimpleTestCase):
                 """Here is the docstring..."""
                 return 1, object()
 
-            other = cached_property(other_value, name='other')
+            other = cached_property(other_value)
 
         attrs = ['value', 'other', '__foo__']
         for attr in attrs:
             self.assertCachedPropertyWorks(attr, Class)
 
+    @ignore_warnings(category=RemovedInDjango50Warning)
     def test_cached_property_auto_name(self):
         """
         cached_property caches its value and behaves like a property
@@ -119,7 +122,7 @@ class FunctionalTests(SimpleTestCase):
                 return 1, object()
 
             other = cached_property(other_value)
-            other2 = cached_property(other_value, name='different_name')
+            other2 = cached_property(other_value)
 
         attrs = ['_Class__value', 'other']
         for attr in attrs:
@@ -130,6 +133,7 @@ class FunctionalTests(SimpleTestCase):
         obj.other2
         self.assertFalse(hasattr(obj, 'different_name'))
 
+    @ignore_warnings(category=RemovedInDjango50Warning)
     def test_cached_property_reuse_different_names(self):
         """Disallow this case because the decorated function wouldn't be cached."""
         with self.assertRaises(RuntimeError) as ctx:
@@ -148,6 +152,7 @@ class FunctionalTests(SimpleTestCase):
             ))
         )
 
+    @ignore_warnings(category=RemovedInDjango50Warning)
     def test_cached_property_reuse_same_name(self):
         """
         Reusing a cached_property on different classes under the same name is
@@ -173,6 +178,7 @@ class FunctionalTests(SimpleTestCase):
         self.assertEqual(b.cp, 2)
         self.assertEqual(a.cp, 1)
 
+    @ignore_warnings(category=RemovedInDjango50Warning)
     def test_cached_property_set_name_not_called(self):
         cp = cached_property(lambda s: None)
 
@@ -180,7 +186,7 @@ class FunctionalTests(SimpleTestCase):
             pass
 
         Foo.cp = cp
-        msg = 'Cannot use cached_property instance without calling __set_name__() on it.'
+        msg = 'Cannot use cached_property instance without calling __set_name__ on it.'
         with self.assertRaisesMessage(TypeError, msg):
             Foo().cp
 
@@ -259,3 +265,17 @@ class FunctionalTests(SimpleTestCase):
 
         self.assertEqual(Foo.foo, 456)
         self.assertEqual(Foo().foo, 456)
+
+
+class DeprecationTests(SimpleTestCase):
+    def test_deprecation_cached_property(self):
+        """cached_property caches its value and behaves like a property."""
+        msg = (
+            'django.utils.functional.cached_property() is deprecated in favor of '
+            'functools.cached_property from the standard library'
+        )
+        with self.assertRaisesMessage(RemovedInDjango50Warning, msg):
+            class Class:
+                @cached_property
+                def value(self):
+                    return 1

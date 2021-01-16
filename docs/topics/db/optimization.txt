@@ -100,7 +100,7 @@ distinction.
 
 Be careful with your own custom properties - it is up to you to implement
 caching when required, for example using the
-:class:`~django.utils.functional.cached_property` decorator.
+:py:func:`~functools.cached_property` decorator.
 
 Use the ``with`` template tag
 -----------------------------

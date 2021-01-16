@@ -1,9 +1,10 @@
+from functools import cached_property
+
 from django.core.exceptions import ValidationError
 from django.forms import Form
 from django.forms.fields import BooleanField, IntegerField
 from django.forms.utils import ErrorList
 from django.forms.widgets import HiddenInput, NumberInput
-from django.utils.functional import cached_property
 from django.utils.html import html_safe
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _, ngettext

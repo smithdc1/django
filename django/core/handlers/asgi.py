@@ -2,6 +2,7 @@ import logging
 import sys
 import tempfile
 import traceback
+from functools import cached_property
 
 from asgiref.sync import sync_to_async
 
@@ -14,7 +15,6 @@ from django.http import (
     HttpResponseServerError, QueryDict, parse_cookie,
 )
 from django.urls import set_script_prefix
-from django.utils.functional import cached_property
 
 logger = logging.getLogger('django.request')
 

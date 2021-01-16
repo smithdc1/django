@@ -5,6 +5,7 @@ import os
 import sys
 import warnings
 import zipfile
+from functools import cached_property
 from itertools import product
 
 from django.apps import apps
@@ -18,7 +19,6 @@ from django.db import (
     DEFAULT_DB_ALIAS, DatabaseError, IntegrityError, connections, router,
     transaction,
 )
-from django.utils.functional import cached_property
 
 try:
     import bz2

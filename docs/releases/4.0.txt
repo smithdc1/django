@@ -283,7 +283,8 @@ Features deprecated in 4.0
 Miscellaneous
 -------------
 
-* ...
+* :class:`django.utils.functional.cached_property` is deprecated in favor of
+  :py:func:`functools.cached_property`.
 
 Features removed in 4.0
 =======================
