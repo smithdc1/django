@@ -6,7 +6,7 @@ register = template.Library()
 @register.tag
 def badtag(parser, token):
     parser.parse(('endbadtag',))
-    parser.delete_first_token()
+    parser.tokens.popleft()
     return BadNode()
 
 

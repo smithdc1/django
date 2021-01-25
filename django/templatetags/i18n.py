@@ -516,8 +516,9 @@ def do_block_translate(parser, token):
 
     singular = []
     plural = []
-    while parser.tokens:
-        token = parser.next_token()
+    tokens = parser.tokens
+    while tokens:
+        token = tokens.popleft()
         if token.token_type in (TokenType.VAR, TokenType.TEXT):
             singular.append(token)
         else:
@@ -525,8 +526,8 @@ def do_block_translate(parser, token):
     if countervar and counter:
         if token.contents.strip() != 'plural':
             raise TemplateSyntaxError("%r doesn't allow other block tags inside it" % bits[0])
-        while parser.tokens:
-            token = parser.next_token()
+        while tokens:
+            token = tokens.popleft()
             if token.token_type in (TokenType.VAR, TokenType.TEXT):
                 plural.append(token)
             else:
@@ -535,6 +536,7 @@ def do_block_translate(parser, token):
     if token.contents.strip() != end_tag_name:
         raise TemplateSyntaxError("%r doesn't allow other block tags (seen %r) inside it" % (bits[0], token.contents))
 
+    parser.tokens = tokens
     return BlockTranslateNode(extra_context, singular, plural, countervar,
                               counter, message_context, trimmed=trimmed,
                               asvar=asvar, tag_name=bits[0])

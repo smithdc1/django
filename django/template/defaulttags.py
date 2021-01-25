@@ -508,7 +508,7 @@ def autoescape(parser, token):
     if arg not in ('on', 'off'):
         raise TemplateSyntaxError("'autoescape' argument should be 'on' or 'off'")
     nodelist = parser.parse(('endautoescape',))
-    parser.delete_first_token()
+    parser.tokens.popleft()
     return AutoEscapeControlNode((arg == 'on'), nodelist)
 
 
@@ -655,7 +655,7 @@ def do_filter(parser, token):
         if filter_name in ('escape', 'safe'):
             raise TemplateSyntaxError('"filter %s" is not permitted.  Use the "autoescape" tag instead.' % filter_name)
     nodelist = parser.parse(('endfilter',))
-    parser.delete_first_token()
+    parser.tokens.popleft()
     return FilterNode(filter_expr, nodelist)
 
 
@@ -791,10 +791,10 @@ def do_for(parser, token):
 
     sequence = parser.compile_filter(bits[in_index + 1])
     nodelist_loop = parser.parse(('empty', 'endfor',))
-    token = parser.next_token()
+    token = parser.tokens.popleft()
     if token.contents == 'empty':
         nodelist_empty = parser.parse(('endfor',))
-        parser.delete_first_token()
+        parser.tokens.popleft()
     else:
         nodelist_empty = None
     return ForNode(loopvars, sequence, is_reversed, nodelist_loop, nodelist_empty)
@@ -887,7 +887,7 @@ def do_if(parser, token):
     condition = TemplateIfParser(parser, bits).parse()
     nodelist = parser.parse(('elif', 'else', 'endif'))
     conditions_nodelists = [(condition, nodelist)]
-    token = parser.next_token()
+    token = parser.tokens.popleft()
 
     # {% elif ... %} (repeatable)
     while token.contents.startswith('elif'):
@@ -895,13 +895,13 @@ def do_if(parser, token):
         condition = TemplateIfParser(parser, bits).parse()
         nodelist = parser.parse(('elif', 'else', 'endif'))
         conditions_nodelists.append((condition, nodelist))
-        token = parser.next_token()
+        token = parser.tokens.popleft()
 
     # {% else %} (optional)
     if token.contents == 'else':
         nodelist = parser.parse(('endif',))
         conditions_nodelists.append((None, nodelist))
-        token = parser.next_token()
+        token = parser.tokens.popleft()
 
     # {% endif %}
     if token.contents != 'endif':
@@ -942,10 +942,10 @@ def ifchanged(parser, token):
     """
     bits = token.split_contents()
     nodelist_true = parser.parse(('else', 'endifchanged'))
-    token = parser.next_token()
+    token = parser.tokens.popleft()
     if token.contents == 'else':
         nodelist_false = parser.parse(('endifchanged',))
-        parser.delete_first_token()
+        parser.tokens.popleft()
     else:
         nodelist_false = NodeList()
     values = [parser.compile_filter(bit) for bit in bits[1:]]
@@ -1208,7 +1208,7 @@ def spaceless(parser, token):
         {% endspaceless %}
     """
     nodelist = parser.parse(('endspaceless',))
-    parser.delete_first_token()
+    parser.tokens.popleft()
     return SpacelessNode(nodelist)
 
 
@@ -1333,7 +1333,7 @@ def verbatim(parser, token):
         {% endverbatim myblock %}
     """
     nodelist = parser.parse(('endverbatim',))
-    parser.delete_first_token()
+    parser.tokens.popleft()
     return VerbatimNode(nodelist.render(Context()))
 
 
@@ -1406,5 +1406,5 @@ def do_with(parser, token):
         raise TemplateSyntaxError("%r received an invalid token: %r" %
                                   (bits[0], remaining_bits[0]))
     nodelist = parser.parse(('endwith',))
-    parser.delete_first_token()
+    parser.tokens.popleft()
     return WithNode(None, None, nodelist, extra_context=extra_context)

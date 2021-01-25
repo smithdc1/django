@@ -54,6 +54,7 @@ import inspect
 import logging
 import re
 from enum import Enum
+from collections import deque
 
 from django.template.context import BaseContext
 from django.utils.formats import localize
@@ -408,7 +409,7 @@ class Parser:
     def __init__(self, tokens, libraries=None, builtins=None, origin=None):
         # Reverse the tokens so delete_first_token(), prepend_token(), and
         # next_token() can operate at the end of the list in constant time.
-        self.tokens = list(reversed(tokens))
+        self.tokens = deque(tokens)
         self.tags = {}
         self.filters = {}
         self.command_stack = []
@@ -435,8 +436,9 @@ class Parser:
         if parse_until is None:
             parse_until = []
         nodelist = NodeList()
-        while self.tokens:
-            token = self.next_token()
+        tokens = self.tokens
+        while tokens:
+            token = tokens.popleft()
             # Use the raw values here for TokenType.* for a tiny performance boost.
             if token.token_type.value == 0:  # TokenType.TEXT
                 self.extend_nodelist(nodelist, TextNode(token.contents), token)
@@ -458,7 +460,7 @@ class Parser:
                     # A matching token has been reached. Return control to
                     # the caller. Put the token back on the token list so the
                     # caller knows where it terminated.
-                    self.prepend_token(token)
+                    tokens.appendleft(token)
                     return nodelist
                 # Add the token to the command stack. This is used for error
                 # messages if further parsing fails due to an unclosed block
@@ -481,11 +483,12 @@ class Parser:
                 self.command_stack.pop()
         if parse_until:
             self.unclosed_block_tag(parse_until)
+        self.tokens = tokens
         return nodelist
 
     def skip_past(self, endtag):
         while self.tokens:
-            token = self.next_token()
+            token = self.tokens.popleft()
             if token.token_type == TokenType.BLOCK and token.contents == endtag:
                 return
         self.unclosed_block_tag([endtag])
@@ -542,15 +545,6 @@ class Parser:
             ', '.join(parse_until),
         )
         raise self.error(token, msg)
-
-    def next_token(self):
-        return self.tokens.pop()
-
-    def prepend_token(self, token):
-        self.tokens.append(token)
-
-    def delete_first_token(self):
-        del self.tokens[-1]
 
     def add_library(self, lib):
         self.tags.update(lib.tags)

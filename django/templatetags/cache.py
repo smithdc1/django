@@ -76,7 +76,7 @@ def do_cache(parser, token):
     Each unique set of arguments will result in a unique cache entry.
     """
     nodelist = parser.parse(('endcache',))
-    parser.delete_first_token()
+    parser.tokens.popleft()
     tokens = token.split_contents()
     if len(tokens) < 3:
         raise TemplateSyntaxError("'%r' tag requires at least 2 arguments." % tokens[0])
