@@ -1372,7 +1372,7 @@ class SeleniumTests(AdminSeleniumTestCase):
             'admin:admin_inlines_courseproxy2_add',
         ]
         css_selector = '.dynamic-class_set#class_set-%s h2'
-
+        self.selenium.set_window_size(1024, 768)
         for url_name in tests:
             with self.subTest(url=url_name):
                 self.selenium.get(self.live_server_url + reverse(url_name))
