@@ -22,7 +22,7 @@ from django.urls import reverse
 from django.utils import translation
 
 from .models import (
-    Advisor, Album, Band, Bee, Car, Company, Event, Honeycomb, Individual,
+    Adviser, Album, Band, Bee, Car, Company, Event, Honeycomb, Individual,
     Inventory, Member, MyFileField, Profile, School, Student,
     UnsafeLimitChoicesTo, VideoStream,
 )
@@ -193,10 +193,10 @@ class AdminFormfieldForDBFieldTests(SimpleTestCase):
         class AdvisorAdmin(admin.ModelAdmin):
             filter_vertical = ['companies']
 
-        self.assertFormfield(Advisor, 'companies', widgets.FilteredSelectMultiple,
+        self.assertFormfield(Adviser, 'companies', widgets.FilteredSelectMultiple,
                              filter_vertical=['companies'])
-        ma = AdvisorAdmin(Advisor, admin.site)
-        f = ma.formfield_for_dbfield(Advisor._meta.get_field('companies'), request=None)
+        ma = AdvisorAdmin(Adviser, admin.site)
+        f = ma.formfield_for_dbfield(Adviser._meta.get_field('companies'), request=None)
         self.assertEqual(
             f.help_text,
             'Hold down “Control”, or “Command” on a Mac, to select more than one.'
@@ -668,12 +668,12 @@ class ManyToManyRawIdWidgetTest(TestCase):
     def test_m2m_related_model_not_in_admin(self):
         # M2M relationship with model not registered with admin site. Raw ID
         # widget should have no magnifying glass link. See #16542
-        consultor1 = Advisor.objects.create(name='Rockstar Techie')
+        consultor1 = Adviser.objects.create(name='Rockstar Techie')
 
         c1 = Company.objects.create(name='Doodle')
         c2 = Company.objects.create(name='Pear')
         consultor1.companies.add(c1, c2)
-        rel = Advisor._meta.get_field('companies').remote_field
+        rel = Adviser._meta.get_field('companies').remote_field
 
         w = widgets.ManyToManyRawIdWidget(rel, widget_admin_site)
         self.assertHTMLEqual(

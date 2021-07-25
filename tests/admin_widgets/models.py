@@ -154,7 +154,7 @@ class Company(models.Model):
     name = models.CharField(max_length=20)
 
 
-class Advisor(models.Model):
+class Adviser(models.Model):
     """
     A model with a m2m to a model that won't be registered with the admin
     (Company) so the corresponding raw ID widget won't have a magnifying

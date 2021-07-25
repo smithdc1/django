@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from .models import (
-    Advisor, Album, Band, Bee, Car, CarTire, Event, Inventory, Member, Profile,
+    Adviser, Album, Band, Bee, Car, CarTire, Event, Inventory, Member, Profile,
     ReleaseEvent, School, User, VideoStream,
 )
 
@@ -54,7 +54,7 @@ site.register(Inventory)
 
 site.register(Bee)
 
-site.register(Advisor)
+site.register(Adviser)
 
 site.register(School, SchoolAdmin)
 
