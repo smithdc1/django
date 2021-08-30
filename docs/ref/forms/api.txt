@@ -551,7 +551,7 @@ default template, see also :ref:`Overriding built-in form templates
 
 ``as_ul()`` renders the form using the template assigned to the forms
 ``template_name_ul`` attribute, by default this template is
-``'django/forms/ul.html'``. Thie template renders the form as a series of
+``'django/forms/ul.html'``. This template renders the form as a series of
 ``<li>`` tags, with each ``<li>`` containing one field. It does *not* include
 the ``<ul>`` or ``</ul>``, so that you can specify any HTML attributes on the
 ``<ul>`` for flexibility::

@@ -770,15 +770,15 @@ The above ends up calling the ``render()`` method on the formset class. This
 renders the formset using the template specified by the formsets
 ``template_name`` attribute. Similar to forms by default the formset will be
 rendered ``as_table`` with other helper methods of ``as_p`` and ``as_ul``
-being available. The rendering of the formset can be customised by overwriting
+being available. The rendering of the formset can be customized by overwriting
 this formsets ``template_name`` attribute or more generally by overriding the
 default template, see also :ref:`Overriding built-in form templates
 <overriding-built-in-form-templates>`.
 
-* template_name: 'django/forms/formsets/default.html'
-* template_name_p (``as_p``): 'django/forms/formsets/p.html'
-* template_name_table (``as_table``): 'django/forms/formsets/table.html'
-* template_name_ul (``as_ul``): 'django/forms/formsets/ul.html'
+* template_name: ``'django/forms/formsets/default.html'``
+* template_name_p (``as_p``): ``'django/forms/formsets/p.html'``
+* template_name_table (``as_table``): ``'django/forms/formsets/table.html'``
+* template_name_ul (``as_ul``): ``'django/forms/formsets/ul.html'``
 
 
 .. versionchanged:: 4.0
