@@ -497,6 +497,19 @@ Although ``<table>`` output is the default output style when you ``print`` a
 form, other output styles are available. Each style is available as a method on
 a form object, and each rendering method returns a string.
 
+``template_name_label``
+-----------------------
+
+.. attribute:: Form.template_name_label
+
+.. versionadded:: 4.0
+
+The template used to render the fields ``<label>``, used when calling
+:meth:`BoundField.label_tag`. Can be changed per form by overwriting this
+attribute or more generally by overriding the default template,
+see also :ref:`Overriding built-in form templates
+<overriding-built-in-form-templates>`.
+
 ``template_name``
 -----------------
 
@@ -504,19 +517,23 @@ a form object, and each rendering method returns a string.
 
 .. versionadded:: 4.0
 
-Template that is going to be rendered if the form is cast into a string, e.g.
-via ``print(form)`` or in a template via ``{{ form }}``. The template can be
-changed per form by overwriting the ``template_name`` attribute or by
-overriding the default template, see also :ref:`Overriding built-in form
-templates <overriding-built-in-form-templates>`.
+The name of a template that is going to be rendered if the form is cast into a
+string, e.g. via ``print(form)`` or in a template via ``{{ form }}``. By
+default this template is ``'django/forms/default.html'``, which is a proxy for
+``'django/forms/table.html'``. The template can be changed per form by
+overwriting the ``template_name`` attribute or more generally by overriding the
+default template, see also :ref:`Overriding built-in form templates
+<overriding-built-in-form-templates>`.
 
 ``as_p()``
 ----------
 
 .. method:: Form.as_p()
 
-``as_p()`` renders the form as a series of ``<p>`` tags, with each ``<p>``
-containing one field::
+``as_p()`` renders the form using the template assigned to the forms
+``template_name_p`` attribute, by default this template is
+``'django/forms/p.html'``. This template renders the form as a series of
+``<p>`` tags, with each ``<p>`` containing one field::
 
     >>> f = ContactForm()
     >>> f.as_p()
@@ -532,10 +549,12 @@ containing one field::
 
 .. method:: Form.as_ul()
 
-``as_ul()`` renders the form as a series of ``<li>`` tags, with each
-``<li>`` containing one field. It does *not* include the ``<ul>`` or
-``</ul>``, so that you can specify any HTML attributes on the ``<ul>`` for
-flexibility::
+``as_ul()`` renders the form using the template assigned to the forms
+``template_name_ul`` attribute, by default this template is
+``'django/forms/ul.html'``. Thie template renders the form as a series of
+``<li>`` tags, with each ``<li>`` containing one field. It does *not* include
+the ``<ul>`` or ``</ul>``, so that you can specify any HTML attributes on the
+``<ul>`` for flexibility::
 
     >>> f = ContactForm()
     >>> f.as_ul()
@@ -551,9 +570,10 @@ flexibility::
 
 .. method:: Form.as_table()
 
-Finally, ``as_table()`` outputs the form as an HTML ``<table>``. This is
-exactly the same as ``print``. In fact, when you ``print`` a form object,
-it calls its ``as_table()`` method behind the scenes::
+Finally, ``as_table()`` renders the form using the template assigned to the
+forms ``template_name_table`` attribute, by default this template is
+``'django/forms/table.html'``. This template outputs the form as an HTML
+``<table>``.::
 
     >>> f = ContactForm()
     >>> f.as_table()
@@ -572,7 +592,7 @@ it calls its ``as_table()`` method behind the scenes::
 
 .. versionadded:: 4.0
 
-Return context text for form rendering.
+Return context text for form rendering in a template.
 
 The available context is:
 
@@ -593,8 +613,8 @@ The render method is called by the ``__str__`` as well as the
 arguments are optional and will default to:
 
 * ``template_name``: :attr:`.Form.template_name`
-* ``context``: :meth:`.Form.get_context`
-* ``renderer``: :attr:`.Form.default_renderer`
+* ``context``: Value returned by :meth:`.Form.get_context`
+* ``renderer``: Value returned by :attr:`.Form.default_renderer`
 
 .. _ref-forms-api-styling-form-rows:
 
@@ -1085,12 +1105,16 @@ Methods of ``BoundField``
     attributes for the ``<label>`` tag.
 
     The HTML that's generated includes the form's
-    :attr:`~django.forms.Form.label_suffix` (a colon, by default) or, if set, the
-    current field's :attr:`~django.forms.Field.label_suffix`. The optional
+    :attr:`~django.forms.Form.label_suffix` (a colon, by default) or, if set,
+    the current field's :attr:`~django.forms.Field.label_suffix`. The optional
     ``label_suffix`` parameter allows you to override any previously set
-    suffix. For example, you can use an empty string to hide the label on selected
-    fields. If you need to do this in a template, you could write a custom
-    filter to allow passing parameters to ``label_tag``.
+    suffix. For example, you can use an empty string to hide the label on
+    selected fields. The label is rendered using the template specified by the
+    forms :attr:`.Form.template_name_label`.
+
+    .. versionchanged:: 4.0
+
+        The label is now rendered using the template engine.
 
 .. method:: BoundField.value()
 
