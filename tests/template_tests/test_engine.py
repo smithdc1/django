@@ -2,6 +2,7 @@ import os
 
 from django.core.exceptions import ImproperlyConfigured
 from django.template import Context
+from django.template.backends.jinja2 import Jinja2
 from django.template.engine import Engine
 from django.test import SimpleTestCase, override_settings
 
@@ -131,3 +132,19 @@ class LoaderTests(SimpleTestCase):
 
         template = engine.get_template('priority/foo.html')
         self.assertEqual(template.render(Context()), 'priority\n')
+
+
+class TestJinja2Engine(SimpleTestCase):
+    @override_settings(ROOT_URLCONF='template_tests.urls')
+    def test_default_environment_render(self):
+        e = Jinja2({
+            'DIRS': [OTHER_DIR, TEMPLATE_DIR],
+            'APP_DIRS': True,
+            'NAME': 'jinja2',
+            'OPTIONS': {},
+        })
+        template = e.get_template('template_tests/default_engine.html')
+        expected = (
+            '<img src="/static/path/to/company-logo.png" alt="Company Logo">\n<a href="/client/1/">Administration</a>'
+        )
+        self.assertEqual(template.render(), expected)

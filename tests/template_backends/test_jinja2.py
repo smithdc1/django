@@ -2,7 +2,9 @@ from pathlib import Path
 from unittest import mock, skipIf
 
 from django.template import TemplateSyntaxError
+from django.templatetags.static import StaticNode
 from django.test import RequestFactory
+from django.urls.base import reverse
 
 from .test_dummy import TemplateStringsTests
 
@@ -132,3 +134,14 @@ class Jinja2Tests(TemplateStringsTests):
         self.assertEqual(len(debug['source_lines']), 0)
         self.assertTrue(debug['name'].endswith('nonexistent.html'))
         self.assertIn('message', debug)
+
+    def test_default_environment(self):
+        e = Jinja2({
+            'DIRS': [Path(__file__).parent / 'templates' / 'template_backends'],
+            'APP_DIRS': False,
+            'NAME': 'jinja2',
+            'OPTIONS': {},
+        })
+        self.assertEqual(e.env.globals['static'], StaticNode.handle_simple)
+        self.assertEqual(e.env.globals['url'], reverse)
+        self.assertIn('_', e.env.globals)

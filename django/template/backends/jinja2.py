@@ -4,10 +4,24 @@ import jinja2
 
 from django.conf import settings
 from django.template import TemplateDoesNotExist, TemplateSyntaxError
+from django.templatetags.static import StaticNode
 from django.utils.functional import cached_property
 from django.utils.module_loading import import_string
 
 from .base import BaseEngine
+
+
+def default_environment(**options):
+    from django.urls import reverse
+    from django.utils.translation import gettext, ngettext
+    if 'jinja2.ext.i18n' not in (extensions := options.get('extensions', [])):
+        extensions.append('jinja2.ext.i18n')
+        options['extensions'] = extensions
+    env = jinja2.Environment(**options)
+    env.install_gettext_callables(gettext, ngettext)
+
+    env.globals.update({'url': reverse, 'static': StaticNode.handle_simple})
+    return env
 
 
 class Jinja2(BaseEngine):
@@ -20,8 +34,7 @@ class Jinja2(BaseEngine):
         super().__init__(params)
 
         self.context_processors = options.pop('context_processors', [])
-
-        environment = options.pop('environment', 'jinja2.Environment')
+        environment = options.pop('environment', 'django.template.backends.jinja2.default_environment')
         environment_cls = import_string(environment)
 
         if 'loader' not in options:

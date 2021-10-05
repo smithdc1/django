@@ -198,7 +198,9 @@ Signals
 Templates
 ~~~~~~~~~
 
-* ...
+* Added a default environment to the Jinja2 backend, which provides static,
+  url, and i18n-related functionality. See
+  :func:`django.templates.jinja2.default_environment()`.
 
 Tests
 ~~~~~
