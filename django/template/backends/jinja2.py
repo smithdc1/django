@@ -13,12 +13,12 @@ from .base import BaseEngine
 
 def default_environment(**options):
     from django.urls import reverse
-    from django.utils.translation import gettext, ngettext
+    from django.utils import translation
     if 'jinja2.ext.i18n' not in (extensions := options.get('extensions', [])):
         extensions.append('jinja2.ext.i18n')
         options['extensions'] = extensions
     env = jinja2.Environment(**options)
-    env.install_gettext_callables(gettext, ngettext)
+    env.install_gettext_translations(translation, newstyle=True)
 
     env.globals.update({'url': reverse, 'static': StaticNode.handle_simple})
     return env
@@ -112,7 +112,8 @@ def get_exception_info(exception):
     if source is None:
         exception_file = Path(exception.filename)
         if exception_file.exists():
-            source = exception_file.read_text()
+            with open(exception_file, 'r') as fp:
+                source = fp.read()
     if source is not None:
         lines = list(enumerate(source.strip().split('\n'), start=1))
         during = lines[lineno - 1][1]

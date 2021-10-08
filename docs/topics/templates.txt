@@ -579,7 +579,7 @@ in all templates.
 
 * ``url``: alias to :func:`django.urls.reverse()`.
 * ``_``: an alias for ``get_text`` enabled via via the Jinja2
-  `i18n extension`_.
+  `i18n extension`_. `New style gettext`_ is enabled.
 * ``static``: See :ttag:`static`.
 
 Django's ``Jinja2`` backend adds defaults that differ from Jinja2's for a few
@@ -652,20 +652,18 @@ The default environment doesn't create a full Django-flavored environment. It
 doesn't know about all of the Django filters and tags. In order to use
 Django-specific APIs, you must configure them into the environment.
 
-For example, you can create ``myproject/jinja2.py`` with this content::
+For example, you can build upon the provided ``default_environment`` by adding
+to ``env.globals``
+creating ``myproject/jinja2.py`` with this content::
 
     from django.utils import lorem_ipsum
 
-    from jinja2 import Environment
+    from jinja2 import default_environment
 
-    def environment(**options):
-        env = Environment(**options)
-        env.globals.update({
-            'lorem': lorem_ipsum.words,
-        })
-        return env
+    env = default_environment()
+    env.globals.update({'lorem': lorem_ipsum.words})
 
-and set the ``'environment'`` option to ``'myproject.jinja2.environment'``.
+and set the ``'environment'`` option to ``'myproject.jinja2.env'``.
 
 Then you could use the following constructs in Jinja2 templates:
 
@@ -682,3 +680,4 @@ need for template context processors. The Django template language doesn't have
 an equivalent of Jinja2 tests.
 
 .. _Jinja2: https://jinja.palletsprojects.com/
+.. _New style gettext: https://jinja.palletsprojects.com/en/3.0.x/extensions/#new-style-gettext
