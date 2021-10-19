@@ -311,7 +311,13 @@ class SliceTransform(Transform):
 
     def as_sql(self, compiler, connection):
         lhs, params = compiler.compile(self.lhs)
-        return '%s[%%s:%%s]' % lhs, params + [self.start, self.end]
+        if self.start and self.end:
+            return '%s[%%s:%%s]' % lhs, params + [self.start, self.end]
+        elif self.start:
+            return '%s[%%s:]' % lhs, params + [self.start]
+        else:
+            return '%s[:%%s]' % lhs, params + [self.start]
+            
 
 
 class SliceTransformFactory:
