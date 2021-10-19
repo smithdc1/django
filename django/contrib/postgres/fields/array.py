@@ -317,7 +317,6 @@ class SliceTransform(Transform):
             return '%s[%%s:]' % lhs, params + [self.start]
         else:
             return '%s[:%%s]' % lhs, params + [self.start]
-            
 
 
 class SliceTransformFactory:
