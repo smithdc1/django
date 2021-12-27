@@ -367,7 +367,8 @@ class TestInline(TestDataMixin, TestCase):
         )
         self.assertContains(
             response,
-            '<input id="id_-1-0-name" type="text" class="vTextField" name="-1-0-name" maxlength="100">',
+            '<input id="id_-1-0-name" type="text" class="vTextField" name="-1-0-name" maxlength="100" '
+            'aria-describedby="id_-1-0-name_helptext" >',
             html=True
         )
         self.assertContains(response, '<input type="hidden" name="-2-0-id" id="id_-2-0-id">', html=True)
