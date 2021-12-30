@@ -328,6 +328,20 @@ class AdminTimeWidgetTest(SimpleTestCase):
 
 class AdminSplitDateTimeWidgetTest(SimpleTestCase):
     def test_render(self):
+        class TestForm(forms.Form):
+            date_time = forms.SplitDateTimeField(widget=widgets.AdminSplitDateTime())
+
+        f = TestForm()
+        self.assertHTMLEqual(
+            f.render(),
+            '<tr><th><label>Date time:</label></th><td><p class="datetime">'
+            '<label for="id_date_time_0">Date:</label><input type="text" '
+            'name="date_time_0" class="vDateField" size="10" required '
+            'id="id_date_time_0"><br><label for="id_date_time_1">'
+            'Time:</label><input type="text" name="date_time_1" '
+            'class="vTimeField" size="8" required id="id_date_time_1"></p>'
+            '</td></tr>',
+        )
         w = widgets.AdminSplitDateTime()
         self.assertHTMLEqual(
             w.render('test', datetime(2007, 12, 1, 9, 30)),
