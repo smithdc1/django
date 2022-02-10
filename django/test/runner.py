@@ -20,7 +20,12 @@ from io import StringIO
 from django.core.management import call_command
 from django.db import connections
 from django.test import SimpleTestCase, TestCase
-from django.test.utils import NullTimeKeeper, TimeKeeper, iter_test_cases
+from django.test.utils import (
+    NullTimeKeeper,
+    TimeKeeper,
+    captured_stdout,
+    iter_test_cases,
+)
 from django.test.utils import setup_databases as _setup_databases
 from django.test.utils import setup_test_environment
 from django.test.utils import teardown_databases as _teardown_databases
@@ -391,7 +396,13 @@ def parallel_type(value):
 _worker_id = 0
 
 
-def _init_worker(counter):
+def _init_worker(
+    counter,
+    process_setup=None,
+    process_setup_args=None,
+    initial_settings=None,
+    serialized_contents=None,
+):
     """
     Switch to databases dedicated to this worker.
 
@@ -405,15 +416,20 @@ def _init_worker(counter):
         counter.value += 1
         _worker_id = counter.value
 
+    if multiprocessing.get_start_method() == "spawn":
+        process_setup(*process_setup_args)
+        setup_test_environment()
+
     for alias in connections:
         connection = connections[alias]
-        settings_dict = connection.creation.get_test_db_clone_settings(str(_worker_id))
-        # connection.settings_dict must be updated in place for changes to be
-        # reflected in django.db.connections. If the following line assigned
-        # connection.settings_dict = settings_dict, new threads would connect
-        # to the default database instead of the appropriate clone.
-        connection.settings_dict.update(settings_dict)
-        connection.close()
+        if multiprocessing.get_start_method() == "spawn":
+            # Restore initial settings in spawned processes
+            connection.settings_dict.update(initial_settings[str(alias)])
+            if serialized_contents and alias in serialized_contents.keys():
+                connection._test_serialized_contents = serialized_contents[str(alias)]
+        connection.creation.setup_worker_connection(_worker_id)
+        with captured_stdout():
+            call_command("check", verbosity=-1, databases=connections)
 
 
 def _run_subsuite(args):
@@ -450,11 +466,21 @@ class ParallelTestSuite(unittest.TestSuite):
     run_subsuite = _run_subsuite
     runner_class = RemoteTestRunner
 
-    def __init__(self, subsuites, processes, failfast=False, buffer=False):
+    def __init__(
+        self,
+        subsuites,
+        processes,
+        failfast=False,
+        buffer=False,
+        process_setup=None,
+        process_setup_args=None,
+    ):
         self.subsuites = subsuites
         self.processes = processes
         self.failfast = failfast
         self.buffer = buffer
+        self.process_setup = process_setup
+        self.process_setup_args = process_setup_args
         super().__init__()
 
     def run(self, result):
@@ -476,7 +502,13 @@ class ParallelTestSuite(unittest.TestSuite):
         pool = multiprocessing.Pool(
             processes=self.processes,
             initializer=self.init_worker.__func__,
-            initargs=[counter],
+            initargs=[
+                counter,
+                self.process_setup,
+                self.process_setup_args,
+                self.initial_settings,
+                self.serialized_contents,
+            ],
         )
         args = [
             (self.runner_class, index, subsuite, self.failfast, self.buffer)
@@ -825,7 +857,14 @@ class DiscoverRunner:
         self.test_loader._top_level_dir = None
         return tests
 
-    def build_suite(self, test_labels=None, extra_tests=None, **kwargs):
+    def build_suite(
+        self,
+        test_labels=None,
+        extra_tests=None,
+        process_setup=None,
+        process_setup_args=None,
+        **kwargs,
+    ):
         if extra_tests is not None:
             warnings.warn(
                 "The extra_tests argument is deprecated.",
@@ -891,6 +930,8 @@ class DiscoverRunner:
                     processes,
                     self.failfast,
                     self.buffer,
+                    process_setup,
+                    process_setup_args,
                 )
         return suite
 
@@ -904,6 +945,20 @@ class DiscoverRunner:
             parallel=self.parallel,
             **kwargs,
         )
+
+    def setup_spawn(self, suite, serialized_aliases):
+        if self.parallel > 1 and multiprocessing.get_start_method() == "spawn":
+            suite.initial_settings = {
+                str(alias): connections[alias].settings_dict for alias in connections
+            }
+            suite.serialized_contents = {
+                str(alias): connections[alias]._test_serialized_contents
+                for alias in connections
+                if alias in serialized_aliases
+            }
+        else:
+            suite.initial_settings = None
+            suite.serialized_contents = None
 
     def get_resultclass(self):
         if self.debug_sql:
@@ -977,7 +1032,14 @@ class DiscoverRunner:
             )
         return databases
 
-    def run_tests(self, test_labels, extra_tests=None, **kwargs):
+    def run_tests(
+        self,
+        test_labels,
+        extra_tests=None,
+        process_setup=None,
+        process_setup_args=None,
+        **kwargs,
+    ):
         """
         Run the unit tests for all the test labels in the provided list.
 
@@ -993,7 +1055,9 @@ class DiscoverRunner:
                 stacklevel=2,
             )
         self.setup_test_environment()
-        suite = self.build_suite(test_labels, extra_tests)
+        suite = self.build_suite(
+            test_labels, extra_tests, process_setup, process_setup_args
+        )
         databases = self.get_databases(suite)
         serialized_aliases = set(
             alias for alias, serialize in databases.items() if serialize
@@ -1006,6 +1070,7 @@ class DiscoverRunner:
         run_failed = False
         try:
             self.run_checks(databases)
+            self.setup_spawn(suite, serialized_aliases)
             result = self.run_suite(suite)
         except Exception:
             run_failed = True
