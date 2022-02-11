@@ -125,13 +125,22 @@ class DatabaseCreation(BaseDatabaseCreation):
 
     def setup_worker_connection(self, _worker_id):
         alias = self.connection.alias
-        settings = self.connection.settings_dict
-        print(settings["NAME"])
         worker_db = f"file:memorydb_{alias}_{_worker_id}?mode=memory&cache=shared"
-        import pprint
 
-        pprint.pprint(self.connection)
-        source_db = sqlite3.connect(settings["NAME"], uri=True)
+        start_method = multiprocessing.get_start_method()
+        if start_method == "fork":
+            source_db = sqlite3.connect(
+                f"file:memorydb_{alias}_?mode=memory&cache=shared", uri=True
+            )
+        elif start_method == "spawn":
+            source_db = sqlite3.connect(
+                "file:%s_%s.sqlite3" % (alias, _worker_id), uri=True
+            )
+        else:
+            raise NotImplementedError(
+                f"Start method {start_method!r} is not supported."
+            )
+
         second_db = sqlite3.connect(worker_db, uri=True)
         source_db.backup(second_db)
         source_db.close()

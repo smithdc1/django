@@ -383,7 +383,7 @@ def django_tests(
         print(msg)
 
     test_labels, state = setup_run_tests(verbosity, start_at, start_after, test_labels)
-    process_setup_args = (verbosity, test_labels, parallel, start_at, start_after)
+    process_setup_args = (verbosity, start_at, start_after, test_labels)
     # Run the test suite, including the extra validation tests.
     if not hasattr(settings, "TEST_RUNNER"):
         settings.TEST_RUNNER = "django.test.runner.DiscoverRunner"
