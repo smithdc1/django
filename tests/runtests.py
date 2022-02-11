@@ -383,6 +383,7 @@ def django_tests(
         print(msg)
 
     test_labels, state = setup_run_tests(verbosity, start_at, start_after, test_labels)
+    process_setup_args = (verbosity, test_labels, parallel, start_at, start_after)
     # Run the test suite, including the extra validation tests.
     if not hasattr(settings, "TEST_RUNNER"):
         settings.TEST_RUNNER = "django.test.runner.DiscoverRunner"
@@ -411,7 +412,11 @@ def django_tests(
         timing=timing,
         shuffle=shuffle,
     )
-    failures = test_runner.run_tests(test_labels)
+    failures = test_runner.run_tests(
+        test_labels,
+        process_setup=setup_run_tests,
+        process_setup_args=process_setup_args,
+    )
     teardown_run_tests(state)
     return failures
 
