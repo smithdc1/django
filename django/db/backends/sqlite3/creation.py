@@ -130,7 +130,7 @@ class DatabaseCreation(BaseDatabaseCreation):
         start_method = multiprocessing.get_start_method()
         if start_method == "fork":
             source_db = sqlite3.connect(
-                f"file:memorydb_{alias}_?mode=memory&cache=shared", uri=True
+                f"file:memorydb_{alias}?mode=memory&cache=shared", uri=True
             )
         elif start_method == "spawn":
             source_db = sqlite3.connect(
