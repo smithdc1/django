@@ -71,7 +71,6 @@ class DatabaseCreation(BaseDatabaseCreation):
         )
 
     def _clone_test_db(self, suffix, verbosity, keepdb=False):
-        breakpoint()
         source_database_name = self.connection.settings_dict["NAME"]
         target_database_name = self.get_test_db_clone_settings(suffix)["NAME"]
         # Forking automatically makes a copy of an in-memory database.
@@ -126,9 +125,13 @@ class DatabaseCreation(BaseDatabaseCreation):
 
     def setup_worker_connection(self, _worker_id):
         alias = self.connection.alias
+        settings = self.connection.settings_dict
+        print(settings["NAME"])
         worker_db = f"file:memorydb_{alias}_{_worker_id}?mode=memory&cache=shared"
-        breakpoint()
-        source_db = sqlite3.connect(f"file:{alias}_{_worker_id}.sqlite3", uri=True)
+        import pprint
+
+        pprint.pprint(self.connection)
+        source_db = sqlite3.connect(settings["NAME"], uri=True)
         second_db = sqlite3.connect(worker_db, uri=True)
         source_db.backup(second_db)
         source_db.close()
