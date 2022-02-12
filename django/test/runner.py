@@ -871,14 +871,7 @@ class DiscoverRunner:
         self.test_loader._top_level_dir = None
         return tests
 
-    def build_suite(
-        self,
-        test_labels=None,
-        extra_tests=None,
-        process_setup=None,
-        process_setup_args=None,
-        **kwargs,
-    ):
+    def build_suite(self, test_labels=None, extra_tests=None, **kwargs):
         if extra_tests is not None:
             warnings.warn(
                 "The extra_tests argument is deprecated.",
@@ -944,8 +937,6 @@ class DiscoverRunner:
                     processes,
                     self.failfast,
                     self.buffer,
-                    process_setup,
-                    process_setup_args,
                 )
         return suite
 

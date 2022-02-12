@@ -401,7 +401,7 @@ def django_tests(
             parallel = 1
 
     TestRunner = get_runner(settings)
-    TestRunner.ParallelTestSuite = partial(
+    TestRunner.parallel_test_suite = partial(
         ParallelTestSuite,
         process_setup=setup_run_tests,
         process_setup_args=process_setup_args,
