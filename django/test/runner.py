@@ -398,10 +398,10 @@ _worker_id = 0
 
 def _init_worker(
     counter,
-    process_setup=None,
-    process_setup_args=None,
     initial_settings=None,
     serialized_contents=None,
+    process_setup=None,
+    process_setup_args=None,
 ):
     """
     Switch to databases dedicated to this worker.
@@ -466,21 +466,11 @@ class ParallelTestSuite(unittest.TestSuite):
     run_subsuite = _run_subsuite
     runner_class = RemoteTestRunner
 
-    def __init__(
-        self,
-        subsuites,
-        processes,
-        failfast=False,
-        buffer=False,
-        process_setup=None,
-        process_setup_args=None,
-    ):
+    def __init__(self, subsuites, processes, failfast=False, buffer=False):
         self.subsuites = subsuites
         self.processes = processes
         self.failfast = failfast
         self.buffer = buffer
-        self.process_setup = process_setup
-        self.process_setup_args = process_setup_args
         super().__init__()
 
     def run(self, result):
@@ -501,11 +491,9 @@ class ParallelTestSuite(unittest.TestSuite):
         counter = multiprocessing.Value(ctypes.c_int, 0)
         pool = multiprocessing.Pool(
             processes=self.processes,
-            initializer=self.init_worker.__func__,
+            initializer=self.init_worker,
             initargs=[
                 counter,
-                self.process_setup,
-                self.process_setup_args,
                 self.initial_settings,
                 self.serialized_contents,
             ],
