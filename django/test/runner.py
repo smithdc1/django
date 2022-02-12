@@ -546,6 +546,20 @@ class ParallelTestSuite(unittest.TestSuite):
     def __iter__(self):
         return iter(self.subsuites)
 
+    def initialize_suite(self):
+        if multiprocessing.get_start_method() == "spawn":
+            self.initial_settings = {
+                str(alias): connections[alias].settings_dict for alias in connections
+            }
+            self.serialized_contents = {
+                str(alias): connections[alias]._test_serialized_contents
+                for alias in connections
+                if alias in self.serialized_aliases
+            }
+        else:
+            self.initial_settings = None
+            self.serialized_contents = None
+
 
 class Shuffler:
     """
@@ -946,20 +960,6 @@ class DiscoverRunner:
             **kwargs,
         )
 
-    def setup_spawn(self, suite, serialized_aliases):
-        if self.parallel > 1 and multiprocessing.get_start_method() == "spawn":
-            suite.initial_settings = {
-                str(alias): connections[alias].settings_dict for alias in connections
-            }
-            suite.serialized_contents = {
-                str(alias): connections[alias]._test_serialized_contents
-                for alias in connections
-                if alias in serialized_aliases
-            }
-        else:
-            suite.initial_settings = None
-            suite.serialized_contents = None
-
     def get_resultclass(self):
         if self.debug_sql:
             return DebugSQLTextTestResult
@@ -982,6 +982,8 @@ class DiscoverRunner:
     def run_suite(self, suite, **kwargs):
         kwargs = self.get_test_runner_kwargs()
         runner = self.test_runner(**kwargs)
+        if hasattr(suite, "initialize_suite"):
+            suite.initialize_suite()
         try:
             return runner.run(suite)
         finally:
@@ -1036,8 +1038,6 @@ class DiscoverRunner:
         self,
         test_labels,
         extra_tests=None,
-        process_setup=None,
-        process_setup_args=None,
         **kwargs,
     ):
         """
@@ -1055,22 +1055,19 @@ class DiscoverRunner:
                 stacklevel=2,
             )
         self.setup_test_environment()
-        suite = self.build_suite(
-            test_labels, extra_tests, process_setup, process_setup_args
-        )
+        suite = self.build_suite(test_labels, extra_tests)
         databases = self.get_databases(suite)
-        serialized_aliases = set(
+        suite.serialized_aliases = set(
             alias for alias, serialize in databases.items() if serialize
         )
         with self.time_keeper.timed("Total database setup"):
             old_config = self.setup_databases(
                 aliases=databases,
-                serialized_aliases=serialized_aliases,
+                serialized_aliases=suite.serialized_aliases,
             )
         run_failed = False
         try:
             self.run_checks(databases)
-            self.setup_spawn(suite, serialized_aliases)
             result = self.run_suite(suite)
         except Exception:
             run_failed = True

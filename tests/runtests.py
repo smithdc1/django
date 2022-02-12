@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import warnings
+from functools import partial
 from pathlib import Path
 
 try:
@@ -24,7 +25,11 @@ else:
     from django.core.exceptions import ImproperlyConfigured
     from django.db import connection, connections
     from django.test import TestCase, TransactionTestCase
-    from django.test.runner import get_max_test_processes, parallel_type
+    from django.test.runner import (
+        ParallelTestSuite,
+        get_max_test_processes,
+        parallel_type,
+    )
     from django.test.selenium import SeleniumTestCaseBase
     from django.test.utils import NullTimeKeeper, TimeKeeper, get_runner
     from django.utils.deprecation import RemovedInDjango50Warning
@@ -396,6 +401,11 @@ def django_tests(
             parallel = 1
 
     TestRunner = get_runner(settings)
+    TestRunner.ParallelTestSuite = partial(
+        ParallelTestSuite,
+        process_setup=setup_run_tests,
+        process_setup_args=process_setup_args,
+    )
     test_runner = TestRunner(
         verbosity=verbosity,
         interactive=interactive,
@@ -412,11 +422,7 @@ def django_tests(
         timing=timing,
         shuffle=shuffle,
     )
-    failures = test_runner.run_tests(
-        test_labels,
-        process_setup=setup_run_tests,
-        process_setup_args=process_setup_args,
-    )
+    failures = test_runner.run_tests(test_labels)
     teardown_run_tests(state)
     return failures
 
