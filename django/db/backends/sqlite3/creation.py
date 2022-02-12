@@ -1,5 +1,7 @@
+import multiprocessing
 import os
 import shutil
+import sqlite3
 import sys
 from pathlib import Path
 
@@ -49,13 +51,24 @@ class DatabaseCreation(BaseDatabaseCreation):
         return test_database_name
 
     def get_test_db_clone_settings(self, suffix):
-        orig_settings_dict = self.connection.settings_dict
-        source_database_name = orig_settings_dict["NAME"]
-        if self.is_in_memory_db(source_database_name):
-            return orig_settings_dict
-        else:
-            root, ext = os.path.splitext(orig_settings_dict["NAME"])
-            return {**orig_settings_dict, "NAME": "{}_{}{}".format(root, suffix, ext)}
+        settings_dict = self.connection.settings_dict
+
+        source_database_name = settings_dict["NAME"]
+        if not self.is_in_memory_db(source_database_name):
+            root, ext = os.path.splitext(source_database_name)
+            return {**settings_dict, "NAME": f"{root}_{suffix}{ext}"}
+
+        start_method = multiprocessing.get_start_method()
+        if start_method == "fork":
+            return settings_dict
+        if start_method == "spawn":
+            return {
+                **settings_dict,
+                "NAME": f"{self.connection.alias}_{suffix}.sqlite3",
+            }
+        raise NotImplementedError(
+            f"Cloning with start method {start_method!r} is not supported."
+        )
 
     def _clone_test_db(self, suffix, verbosity, keepdb=False):
         source_database_name = self.connection.settings_dict["NAME"]
@@ -85,6 +98,9 @@ class DatabaseCreation(BaseDatabaseCreation):
             except Exception as e:
                 self.log("Got an error cloning the test database: %s" % e)
                 sys.exit(2)
+        elif multiprocessing.get_start_method() == "spawn":
+            ondisk_db = sqlite3.connect(target_database_name, uri=True)
+            self.connection.connection.backup(ondisk_db)
 
     def _destroy_test_db(self, test_database_name, verbosity):
         if test_database_name and not self.is_in_memory_db(test_database_name):
@@ -106,3 +122,27 @@ class DatabaseCreation(BaseDatabaseCreation):
         else:
             sig.append(test_database_name)
         return tuple(sig)
+
+    def setup_worker_connection(self, _worker_id):
+        alias = self.connection.alias
+        worker_db = f"file:memorydb_{alias}_{_worker_id}?mode=memory&cache=shared"
+
+        start_method = multiprocessing.get_start_method()
+        if start_method == "fork":
+            source_db = sqlite3.connect(
+                f"file:memorydb_{alias}?mode=memory&cache=shared", uri=True
+            )
+        elif start_method == "spawn":
+            source_db = sqlite3.connect(f"file:{alias}_{_worker_id}.sqlite3", uri=True)
+        else:
+            raise NotImplementedError(
+                f"Start method {start_method!r} is not supported."
+            )
+
+        second_db = sqlite3.connect(worker_db, uri=True)
+        source_db.backup(second_db)
+        source_db.close()
+        self.connection.settings_dict["NAME"] = worker_db
+        self.connection.connect()
+        second_db.close()
+        self.mark_expected_failures_and_skips()

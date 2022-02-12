@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import warnings
+from functools import partial
 from pathlib import Path
 
 try:
@@ -24,7 +25,7 @@ else:
     from django.core.exceptions import ImproperlyConfigured
     from django.db import connection, connections
     from django.test import TestCase, TransactionTestCase
-    from django.test.runner import get_max_test_processes, parallel_type
+    from django.test.runner import _init_worker, get_max_test_processes, parallel_type
     from django.test.selenium import SeleniumTestCaseBase
     from django.test.utils import NullTimeKeeper, TimeKeeper, get_runner
     from django.utils.deprecation import RemovedInDjango50Warning
@@ -382,7 +383,8 @@ def django_tests(
             msg += " with up to %d processes" % max_parallel
         print(msg)
 
-    test_labels, state = setup_run_tests(verbosity, start_at, start_after, test_labels)
+    process_setup_args = (verbosity, start_at, start_after, test_labels)
+    test_labels, state = setup_run_tests(*process_setup_args)
     # Run the test suite, including the extra validation tests.
     if not hasattr(settings, "TEST_RUNNER"):
         settings.TEST_RUNNER = "django.test.runner.DiscoverRunner"
@@ -395,6 +397,11 @@ def django_tests(
             parallel = 1
 
     TestRunner = get_runner(settings)
+    TestRunner.parallel_test_suite.init_worker = partial(
+        _init_worker,
+        process_setup=setup_run_tests,
+        process_setup_args=process_setup_args,
+    )
     test_runner = TestRunner(
         verbosity=verbosity,
         interactive=interactive,
