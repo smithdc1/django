@@ -124,25 +124,31 @@ class DatabaseCreation(BaseDatabaseCreation):
         return tuple(sig)
 
     def setup_worker_connection(self, _worker_id):
-        alias = self.connection.alias
-        worker_db = f"file:memorydb_{alias}_{_worker_id}?mode=memory&cache=shared"
+        settings_dict = self.get_test_db_clone_settings(_worker_id)
+        # connection.settings_dict must be updated in place for changes to be
+        # reflected in django.db.connections. Otherwise new threads would
+        # connect to the default database instead of the appropriate clone.
 
         start_method = multiprocessing.get_start_method()
         if start_method == "fork":
-            source_db = sqlite3.connect(
-                f"file:memorydb_{alias}?mode=memory&cache=shared", uri=True
-            )
+            # update settings_dict in place
+            self.connection.settings_dict.update(settings_dict)
+            self.connection.close()
         elif start_method == "spawn":
+            alias = self.connection.alias
+            worker_db = f"file:memorydb_{alias}_{_worker_id}?mode=memory&cache=shared"
             source_db = sqlite3.connect(f"file:{alias}_{_worker_id}.sqlite3", uri=True)
+            second_db = sqlite3.connect(worker_db, uri=True)
+            source_db.backup(second_db)
+            source_db.close()
+            # update settings_dict in place
+            self.connection.settings_dict.update(settings_dict)
+            self.connection.settings_dict["NAME"] = worker_db
+            # Re-open connection to in-memory database before closing copy connection.
+            self.connection.connect()
+            second_db.close()
+            self.mark_expected_failures_and_skips()
         else:
             raise NotImplementedError(
                 f"Start method {start_method!r} is not supported."
             )
-
-        second_db = sqlite3.connect(worker_db, uri=True)
-        source_db.backup(second_db)
-        source_db.close()
-        self.connection.settings_dict["NAME"] = worker_db
-        self.connection.connect()
-        second_db.close()
-        self.mark_expected_failures_and_skips()
