@@ -173,6 +173,14 @@ class TestUtilsText(SimpleTestCase):
             "<i>Buenos d&iacute;as! &#x00bf;C&oacute;mo…</i>",
             truncator.chars(40, html=True),
         )
+        self.assertEqual(
+            "<i>Buenos d&ia…</i>",
+            truncator.chars(12, html=True),
+        )
+        self.assertEqual(
+            "<i>Buenos d&iacute;as! &#x…</i>",
+            truncator.chars(24, html=True),
+        )
         truncator = text.Truncator("<p>I &lt;3 python, what about you?</p>")
         self.assertEqual("<p>I &lt;3 python,…</p>", truncator.chars(16, html=True))
 
