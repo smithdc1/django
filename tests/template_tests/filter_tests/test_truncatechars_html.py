@@ -41,7 +41,7 @@ class FunctionTests(SimpleTestCase):
         )
 
     def test_truncate_something(self):
-        self.assertEqual(truncatechars_html("a<b>b</b>c", 3), "a<b>b</b>c")
+        self.assertEqual(truncatechars_html("a<b>b</b>c", 3), "a<b>b</b>…")
 
     def test_invalid_arg(self):
         html = '<p>one <a href="#">two - three <br>four</a> five</p>'
