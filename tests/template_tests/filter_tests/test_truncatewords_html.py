@@ -53,7 +53,7 @@ class FunctionTests(SimpleTestCase):
             truncatewords_html(
                 "<i>Buenos d&iacute;as! &#x00bf;C&oacute;mo est&aacute;?</i>", 3
             ),
-            "<i>Buenos d&iacute;as! &#x00bf;C&oacute;mo …</i>",
+            "<i>Buenos días! ¿Cómo …</i>",
         )
 
     def test_invalid_arg(self):
