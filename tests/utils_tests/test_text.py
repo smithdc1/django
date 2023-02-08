@@ -173,10 +173,10 @@ class TestUtilsText(SimpleTestCase):
 
         # Test html entities
         truncator = text.Truncator(
-            "<i>Buenos d&iacute;as! &#x00bf;C&oacute;mo est&aacute;?</i>"
+            "<i>Buenos d&iacute;as! &#x00bf;C&oacute;mo est&aacute;s?</i>"
         )
         self.assertEqual(
-            "<i>Buenos días! ¿Cómo está?</i>",
+            "<i>Buenos días! ¿Cómo estás?</i>",
             truncator.chars(40, html=True),
         )
         self.assertEqual(
@@ -258,7 +258,7 @@ class TestUtilsText(SimpleTestCase):
 
         # Test html entities
         truncator = text.Truncator(
-            "<i>Buenos d&iacute;as! &#x00bf;C&oacute;mo est&aacute;?</i>"
+            "<i>Buenos d&iacute;as! &#x00bf;C&oacute;mo est&aacute;s?</i>"
         )
         self.assertEqual(
             "<i>Buenos días! ¿Cómo…</i>",
