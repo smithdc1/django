@@ -67,6 +67,22 @@ def wrap(text, width):
     return "".join(_generator())
 
 
+def add_truncation_text(text, truncate=None):
+    if truncate is None:
+        truncate = pgettext(
+            "String to return when truncating text", "%(truncated_text)s…"
+        )
+    if "%(truncated_text)s" in truncate:
+        return truncate % {"truncated_text": text}
+    # The truncation text didn't contain the %(truncated_text)s string
+    # replacement argument so just append it to the text.
+    if text.endswith(truncate):
+        # But don't append the truncation text if the current text already
+        # ends in this.
+        return text
+    return f"{text}{truncate}"
+
+
 class TruncateHTMLParser(HTMLParser):
     class TruncationCompleted(Exception):
         pass
@@ -114,7 +130,7 @@ class TruncateHTMLParser(HTMLParser):
         data_len = len(data)
         if self.remaining < data_len:
             self.remaining = 0
-            self.output += Truncator.add_truncation_text(output, self.truncate)
+            self.output += add_truncation_text(output, self.truncate)
             raise self.TruncationCompleted
         self.remaining -= data_len
         self.output += output
@@ -160,22 +176,6 @@ class Truncator(SimpleLazyObject):
     def __init__(self, text):
         super().__init__(lambda: str(text))
 
-    @classmethod
-    def add_truncation_text(cls, text, truncate=None):
-        if truncate is None:
-            truncate = pgettext(
-                "String to return when truncating text", "%(truncated_text)s…"
-            )
-        if "%(truncated_text)s" in truncate:
-            return truncate % {"truncated_text": text}
-        # The truncation text didn't contain the %(truncated_text)s string
-        # replacement argument so just append it to the text.
-        if text.endswith(truncate):
-            # But don't append the truncation text if the current text already
-            # ends in this.
-            return text
-        return "%s%s" % (text, truncate)
-
     def chars(self, num, truncate=None, html=False):
         """
         Return the text truncated to be no longer than the specified number
@@ -190,7 +190,7 @@ class Truncator(SimpleLazyObject):
 
         # Calculate the length to truncate to (max length - end_text length)
         truncate_len = length
-        truncate = self.add_truncation_text("", truncate)
+        truncate = add_truncation_text("", truncate)
         for char in truncate:
             if not unicodedata.combining(char):
                 truncate_len -= 1
@@ -217,7 +217,7 @@ class Truncator(SimpleLazyObject):
                 end_index = i
             if s_len > length:
                 # Return the truncated string
-                return self.add_truncation_text(text[: end_index or 0], truncate)
+                return add_truncation_text(text[: end_index or 0], truncate)
 
         # Return the original string since no truncation was necessary
         return text
@@ -246,7 +246,7 @@ class Truncator(SimpleLazyObject):
         words = self._wrapped.split()
         if len(words) > length:
             words = words[:length]
-            return self.add_truncation_text(" ".join(words), truncate)
+            return add_truncation_text(" ".join(words), truncate)
         return " ".join(words)
 
 
