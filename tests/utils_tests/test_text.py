@@ -5,7 +5,7 @@ from django.core.exceptions import SuspiciousFileOperation
 from django.test import SimpleTestCase
 from django.utils import text
 from django.utils.functional import lazystr
-from django.utils.text import DjangoHTMLParser, format_lazy
+from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy, override
 
 IS_WIDE_BUILD = len("\U0001F4A9") == 1
@@ -93,12 +93,6 @@ class TestUtilsText(SimpleTestCase):
         self.assertEqual(
             text.Truncator(lazystr("The quick brown fox")).chars(10), "The quick…"
         )
-
-    def test_DjangoHTMLParser(self):
-        parser = DjangoHTMLParser()
-        msg = "func must be 'words' or 'chars', got 'word'."
-        with self.assertRaisesMessage(AttributeError, msg):
-            parser._truncate_html("word", "", 0, "...")
 
     def test_truncate_chars_html(self):
         truncator = text.Truncator(

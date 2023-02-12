@@ -67,7 +67,7 @@ def wrap(text, width):
     return "".join(_generator())
 
 
-class DjangoHTMLParser(HTMLParser):
+class TruncateHTMLParser(HTMLParser):
     class TruncationCompleted(Exception):
         pass
 
@@ -87,10 +87,17 @@ class DjangoHTMLParser(HTMLParser):
         "wbr",
     }
 
-    def __init__(self, *, convert_charrefs=True):
+    def __init__(self, *, num, truncate, convert_charrefs=True):
         super().__init__(convert_charrefs=convert_charrefs)
         self.tags = deque()
         self.output = ""
+        self.remaining = num
+        self.truncate = truncate
+
+    def handle_startendtag(self, tag, attrs):
+        self.handle_starttag(tag, attrs)
+        if tag not in self.void_elements:
+            self.handle_endtag(tag)
 
     def handle_starttag(self, tag, attrs):
         self.output += self.get_starttag_text()
@@ -103,38 +110,46 @@ class DjangoHTMLParser(HTMLParser):
             self.tags.remove(tag)
 
     def handle_data(self, data):
-        if self.func == "words":
-            data = re.split(r"(?<=\S)\s(?=\S)", data)
-            output = escape(" ".join(data[: self.num]))
-        else:
-            output = escape("".join(data[: self.num]))
-
+        data, output = self.process(data)
         data_len = len(data)
-        if self.num < data_len:
-            if self.func == "words" and self.truncate and self.truncate[0] == " ":
-                output = output.strip()
+        if self.remaining < data_len:
+            self.remaining = 0
             self.output += Truncator.add_truncation_text(output, self.truncate)
-            self.output += "".join([f"</{tag}>" for tag in self.tags])
-            raise self.TruncationCompleted()
-        self.num -= data_len
+            raise self.TruncationCompleted
+        self.remaining -= data_len
         self.output += output
 
-    def _truncate_html(self, func, text, num, truncate):
-        if func not in ("words", "chars"):
-            raise AttributeError(f"func must be 'words' or 'chars', got '{func}'.")
-        if num <= 0:
-            if func == "words":
-                return ""
-            else:
-                return truncate
-        self.func = func
-        self.num = num
-        self.truncate = truncate
+    def feed(self, data):
         try:
-            self.feed(text)
+            super().feed(data)
         except self.TruncationCompleted:
-            pass
-        return self.output
+            self.output += "".join([f"</{tag}>" for tag in self.tags])
+            self.tags.clear()
+            self.reset()
+
+
+class TruncateCharsHTMLParser(TruncateHTMLParser):
+    def process(self, data):
+        output = escape("".join(data[:self.remaining]))
+        return data, output
+
+    def feed(self, data):
+        if self.remaining <= 0:
+            self.output += self.truncate
+            return
+        super().feed(data)
+
+
+class TruncateWordsHTMLParser(TruncateHTMLParser):
+    def process(self, data):
+        data = re.split(r"(?<=\S)\s(?=\S)", data)
+        output = escape(" ".join(data[: self.remaining]))
+        return data, output
+
+    def feed(self, data):
+        if self.remaining <= 0:
+            return
+        super().feed(data)
 
 
 class Truncator(SimpleLazyObject):
@@ -182,8 +197,10 @@ class Truncator(SimpleLazyObject):
                 if truncate_len == 0:
                     break
         if html:
-            parser = DjangoHTMLParser()
-            return parser._truncate_html("chars", text, truncate_len, truncate)
+            parser = TruncateCharsHTMLParser(num=truncate_len, truncate=truncate)
+            parser.feed(text)
+            parser.close()
+            return parser.output
         return self._text_chars(length, truncate, text, truncate_len)
 
     def _text_chars(self, length, truncate, text, truncate_len):
@@ -214,8 +231,10 @@ class Truncator(SimpleLazyObject):
         self._setup()
         length = int(num)
         if html:
-            parser = DjangoHTMLParser()
-            return parser._truncate_html("words", self._wrapped, num, truncate)
+            parser = TruncateWordsHTMLParser(num=num, truncate=truncate)
+            parser.feed(self._wrapped)
+            parser.close()
+            return parser.output
         return self._text_words(length, truncate)
 
     def _text_words(self, length, truncate):
