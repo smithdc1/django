@@ -23,4 +23,4 @@ jobs:
         run: python -m pip install --upgrade pip setuptools wheel selenium
       - run: python -m pip install -r tests/requirements/py3.txt -e .
       - name: Run tests
-        run: python tests/runtests.py --selenium=firefox --headless -v2
+        run: python tests/runtests.py --selenium=firefox --parallel=1 -v2
