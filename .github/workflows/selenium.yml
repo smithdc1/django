@@ -1,7 +1,8 @@
-name: Benchmark
+name: Selenium
 
 on:
   pull_request:
+    types: [ labeled, synchronize, opened, reopened ]
 
 permissions:
    contents: read
