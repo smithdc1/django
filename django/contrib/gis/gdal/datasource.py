@@ -33,13 +33,13 @@
               #  OFTReal returns floats, all else returns string.
               val = field.value
 """
-from ctypes import byref
 from pathlib import Path
 
 from django.contrib.gis.gdal.base import GDALBase
 from django.contrib.gis.gdal.driver import Driver
 from django.contrib.gis.gdal.error import GDALException
 from django.contrib.gis.gdal.layer import Layer
+from django.contrib.gis.gdal.prototypes import GDAL_OF_READONLY, GDAL_OF_UPDATE
 from django.contrib.gis.gdal.prototypes import ds as capi
 from django.utils.encoding import force_bytes, force_str
 
@@ -55,9 +55,9 @@ class DataSource(GDALBase):
     def __init__(self, ds_input, ds_driver=False, write=False, encoding="utf-8"):
         # The write flag.
         if write:
-            self._write = 1
+            self._write = GDAL_OF_UPDATE
         else:
-            self._write = 0
+            self._write = GDAL_OF_READONLY
         # See also https://gdal.org/development/rfc/rfc23_ogr_unicode.html
         self.encoding = encoding
 
@@ -68,7 +68,12 @@ class DataSource(GDALBase):
             ds_driver = Driver.ptr_type()
             try:
                 # OGROpen will auto-detect the data source type.
-                ds = capi.open_ds(force_bytes(ds_input), self._write, byref(ds_driver))
+
+                # Not sure about the byref(ds_driver)
+                # ds = capi.open_ds(
+                #   force_bytes(ds_input), self._write, byref(ds_driver), None, None
+                # )
+                ds = capi.open_ds(force_bytes(ds_input), self._write, None, None, None)
             except GDALException:
                 # Making the error message more clear rather than something
                 # like "Invalid pointer returned from OGROpen".
@@ -82,7 +87,8 @@ class DataSource(GDALBase):
 
         if ds:
             self.ptr = ds
-            self.driver = Driver(ds_driver)
+            driver = capi.get_dataset_driver(ds)
+            self.driver = Driver(driver)
         else:
             # Raise an exception if the returned pointer is NULL
             raise GDALException('Invalid data source file "%s"' % ds_input)
