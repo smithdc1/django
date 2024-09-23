@@ -81,6 +81,7 @@ class BaseForm(RenderableFormMixin):
         field_order=None,
         use_required_attribute=None,
         renderer=None,
+        bound_field_class=None,
     ):
         self.is_bound = data is not None or files is not None
         self.data = MultiValueDict() if data is None else data
@@ -123,6 +124,9 @@ class BaseForm(RenderableFormMixin):
                 if isinstance(self.default_renderer, type):
                     renderer = renderer()
         self.renderer = renderer
+        self.bound_field_class = (
+            bound_field_class or self.renderer.get_bound_field_class()
+        )
 
     def order_fields(self, field_order):
         """

@@ -18,7 +18,6 @@ from urllib.parse import urlsplit, urlunsplit
 from django.conf import settings
 from django.core import validators
 from django.core.exceptions import ValidationError
-from django.forms.boundfield import BoundField
 from django.forms.utils import from_current_timezone, to_current_timezone
 from django.forms.widgets import (
     FILE_INPUT_CONTRADICTION,
@@ -111,6 +110,7 @@ class Field:
         disabled=False,
         label_suffix=None,
         template_name=None,
+        bound_field_class=None,
     ):
         # required -- Boolean that specifies whether the field is required.
         #             True by default.
@@ -135,6 +135,7 @@ class Field:
         #             is its widget is shown in the form but not editable.
         # label_suffix -- Suffix to be added to the label. Overrides
         #                 form's label_suffix.
+        # bound_field_class -- BoundField class to use in Field.get_bound_field.
         self.required, self.label, self.initial = required, label, initial
         self.show_hidden_initial = show_hidden_initial
         self.help_text = help_text
@@ -169,6 +170,7 @@ class Field:
 
         self.validators = [*self.default_validators, *validators]
         self.template_name = template_name
+        self.bound_field_class = bound_field_class
 
         super().__init__()
 
@@ -251,7 +253,8 @@ class Field:
         Return a BoundField instance that will be used when accessing the form
         field in a template.
         """
-        return BoundField(form, self, field_name)
+        boundfield = self.bound_field_class or form.bound_field_class
+        return boundfield(form, self, field_name)
 
     def __deepcopy__(self, memo):
         result = copy.copy(self)
