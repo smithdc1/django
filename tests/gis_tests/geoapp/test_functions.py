@@ -7,7 +7,7 @@ from django.contrib.gis.db.models import GeometryField, PolygonField, functions
 from django.contrib.gis.geos import GEOSGeometry, LineString, Point, Polygon, fromstr
 from django.contrib.gis.measure import Area
 from django.db import NotSupportedError, connection
-from django.db.models import IntegerField, Sum, Value
+from django.db.models import F, IntegerField, Sum, Value
 from django.test import TestCase, skipUnlessDBFeature
 
 from ..utils import FuncTestMixin
@@ -594,6 +594,11 @@ class GISFunctionsTests(FuncTestMixin, TestCase):
         )
         qs = ThreeDimensionalFeature.objects.annotate(
             num_dims=functions.NumDimensions("geom")
+        )
+        self.assertEqual(qs[0].num_dims, 3)
+
+        qs = ThreeDimensionalFeature.objects.annotate(
+            num_dims=F("geom__num_dimensions")
         )
         self.assertEqual(qs[0].num_dims, 3)
 
