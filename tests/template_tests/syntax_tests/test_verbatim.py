@@ -53,3 +53,23 @@ class VerbatimTagTests(SimpleTestCase):
     def test_verbatim_tag06(self):
         output = self.engine.render_to_string("verbatim-tag06")
         self.assertEqual(output, "Don't {% endverbatim %} just yet")
+
+    @setup(
+        {
+            "verbatim-tag07": "{% verbatim %}{{% endverbatim %}"
+            "text{% verbatim %}}{% endverbatim %}"
+        }
+    )
+    def test_verbatim_tag07(self):
+        output = self.engine.render_to_string("verbatim-tag07")
+        self.assertEqual(output, "{text}")
+
+    @setup(
+        {
+            "verbatim-tag08": "{% verbatim %}{{{% endverbatim %}"
+            "text{% verbatim %}}}{% endverbatim %}"
+        }
+    )
+    def test_verbatim_tag08(self):
+        output = self.engine.render_to_string("verbatim-tag08")
+        self.assertEqual(output, "{{text}}")

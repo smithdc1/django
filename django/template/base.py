@@ -54,6 +54,7 @@ import inspect
 import logging
 import re
 from enum import Enum
+from sys import intern
 
 from django.template.context import BaseContext
 from django.utils.formats import localize
@@ -67,17 +68,20 @@ from django.utils.translation import gettext_lazy, pgettext_lazy
 from .exceptions import TemplateSyntaxError
 
 # template syntax constants
-FILTER_SEPARATOR = "|"
-FILTER_ARGUMENT_SEPARATOR = ":"
-VARIABLE_ATTRIBUTE_SEPARATOR = "."
-BLOCK_TAG_START = "{%"
-BLOCK_TAG_END = "%}"
-VARIABLE_TAG_START = "{{"
-VARIABLE_TAG_END = "}}"
-COMMENT_TAG_START = "{#"
-COMMENT_TAG_END = "#}"
-SINGLE_BRACE_START = "{"
-SINGLE_BRACE_END = "}"
+FILTER_SEPARATOR = intern("|")
+FILTER_ARGUMENT_SEPARATOR = intern(":")
+VARIABLE_ATTRIBUTE_SEPARATOR = intern(".")
+BLOCK_TAG_START = intern("{%")
+BLOCK_TAG_END = intern("%}")
+VARIABLE_TAG_START = intern("{{")
+VARIABLE_TAG_END = intern("}}")
+COMMENT_TAG_START = intern("{#")
+COMMENT_TAG_END = intern("#}")
+SINGLE_BRACE_START = intern("{")
+SINGLE_BRACE_END = intern("}")
+VERBATIM_BLOCK = intern("verbatim")
+TAG_IDENTIFIERS = {intern("%"), intern("{"), intern("#")}
+NEW_LINE = intern("\n")
 
 # what to report as the origin for templates that come from non-loader sources
 # (e.g. strings)
@@ -345,10 +349,19 @@ class Token:
         return split
 
 
+class LexerError(Exception):
+    pass
+
+
 class Lexer:
     def __init__(self, template_string):
         self.template_string = template_string
         self.verbatim = False
+        self.lookups = {
+            BLOCK_TAG_START: self.block,
+            COMMENT_TAG_START: self.comment,
+            VARIABLE_TAG_START: self.variable,
+        }
 
     def __repr__(self):
         return '<%s template_string="%s...", verbatim=%s>' % (
@@ -358,86 +371,166 @@ class Lexer:
         )
 
     def tokenize(self):
-        """
-        Return a list of tokens from a given template_string.
-        """
-        in_tag = False
-        lineno = 1
-        result = []
-        for token_string in tag_re.split(self.template_string):
-            if token_string:
-                result.append(self.create_token(token_string, None, lineno, in_tag))
-                lineno += token_string.count("\n")
-            in_tag = not in_tag
-        return result
+        self.pos = -1
+        tokens = self.start()
+        return tokens
 
-    def create_token(self, token_string, position, lineno, in_tag):
-        """
-        Convert the given token string into a new Token object and return it.
-        If in_tag is True, we are processing something that matched a tag,
-        otherwise it should be treated as a literal string.
-        """
-        if in_tag:
-            # The [0:2] and [2:-2] ranges below strip off *_TAG_START and
-            # *_TAG_END. The 2's are hard-coded for performance. Using
-            # len(BLOCK_TAG_START) would permit BLOCK_TAG_START to be
-            # different, but it's not likely that the TAG_START values will
-            # change anytime soon.
-            token_start = token_string[0:2]
-            if token_start == BLOCK_TAG_START:
-                content = token_string[2:-2].strip()
-                if self.verbatim:
-                    # Then a verbatim block is being processed.
-                    if content != self.verbatim:
-                        return Token(TokenType.TEXT, token_string, position, lineno)
-                    # Otherwise, the current verbatim block is ending.
-                    self.verbatim = False
-                elif content[:9] in ("verbatim", "verbatim "):
-                    # Then a verbatim block is starting.
-                    self.verbatim = "end%s" % content
-                return Token(TokenType.BLOCK, content, position, lineno)
-            if not self.verbatim:
-                content = token_string[2:-2].strip()
-                if token_start == VARIABLE_TAG_START:
-                    return Token(TokenType.VAR, content, position, lineno)
-                # BLOCK_TAG_START was handled above.
-                assert token_start == COMMENT_TAG_START
-                return Token(TokenType.COMMENT, content, position, lineno)
-        return Token(TokenType.TEXT, token_string, position, lineno)
+    def start(self):
+        self.lookahead = None
+        self.len = len(self.template_string) - 1
+        token_data = []
+        self.verbatim = False
+        while self.pos < self.len:
+            if self.lookahead:
+                token_data.append(self.lookups[self.lookahead]())
+                self.lookahead = None
+            elif self.verbatim:
+                token_data.extend(self.verbatim_block())
+            else:
+                token_data.append(self.text())
+        return self.create_tokens(token_data)
+
+    def variable(self):
+        self.pos += 2
+        endtag = self.template_string.find(VARIABLE_TAG_END, self.pos + 1)
+        if endtag == -1:
+            # Got to end of file without closing the block.
+            # Treat this as a text token.
+            chars = self.template_string[self.pos + 1 :]
+            self.pos = self.len
+            return TokenType.TEXT, "".join([VARIABLE_TAG_START, *chars])
+        chars = self.template_string[self.pos + 1 : endtag].strip()
+        self.pos = endtag + 1
+        return TokenType.VAR, chars
+
+    def block(self):
+        self.pos += 2
+        endtag = self.template_string.find(BLOCK_TAG_END, self.pos + 1)
+        if endtag == -1:
+            # Got to end of file without closing the block.
+            # Treat this as a text token.
+            chars = self.template_string[self.pos + 1 :]
+            self.pos = self.len
+            return TokenType.TEXT, "".join([BLOCK_TAG_START, *chars])
+        chars = self.template_string[self.pos + 1 : endtag].strip()
+        self.pos = endtag + 1
+        if chars.startswith(VERBATIM_BLOCK):
+            self.verbatim = f"end{chars}"
+        return TokenType.BLOCK, chars
+
+    def comment(self):
+        self.pos += 2
+        endtag = self.template_string.find(COMMENT_TAG_END, self.pos + 1)
+        if endtag == -1:
+            # Got to end of file without closing the block.
+            # Treat this as a text token.
+            chars = self.template_string[self.pos + 1 :]
+            self.pos = self.len
+            return TokenType.COMMENT, "".join([COMMENT_TAG_START, *chars])
+        chars = self.template_string[self.pos + 1 : endtag].strip()
+        self.pos = endtag + 1
+        return TokenType.COMMENT, chars
+
+    def text(self):
+        chars = []
+        while True:
+            next_bracket = self.template_string.find(SINGLE_BRACE_START, self.pos + 1)
+            if next_bracket != -1:
+                text = self.template_string[self.pos + 1 : next_bracket]
+                self.pos = next_bracket
+                if text:
+                    chars.append(text)
+            else:
+                text = self.template_string[self.pos + 1 :]
+                chars.append(text)
+                self.pos += len(text)
+                break
+            peek = self.template_string[self.pos + 1]
+            if peek in TAG_IDENTIFIERS:
+                self.lookahead = f"{SINGLE_BRACE_START}{peek}"
+                self.pos -= 1
+                break
+            else:
+                chars.append(SINGLE_BRACE_START)
+        if chars:
+            return TokenType.TEXT, "".join(chars)
+        else:
+            # Not a Text Token, and the next token type is known.
+            # For performance, call that token type directly.
+            token_data = self.lookups[self.lookahead]()
+            self.lookahead = None
+            return token_data
+
+    def verbatim_block(self):
+        chars = []
+        while self.verbatim:
+            self.pos += 1
+            char = self.template_string[self.pos]
+            if char == SINGLE_BRACE_START:
+                peek = self.template_string[self.pos + 1]
+                if peek == "%":
+                    # Start of a block -- parse the block and see
+                    # if it was an "endverbatim" block.
+                    self.pos -= 1
+                    self.lookahead = BLOCK_TAG_START
+                    _, block_contents = self.block()
+                    self.lookahead = None
+                    if block_contents.startswith(self.verbatim):
+                        self.verbatim = False
+                        break
+                    else:
+                        # Not a verbatim block -- treat as text.
+                        contents = f"{BLOCK_TAG_START} {block_contents} {BLOCK_TAG_END}"
+                        chars.append(contents)
+                else:
+                    # Not a block -- treat as text.
+                    chars.append(SINGLE_BRACE_START)
+            else:
+                chars.append(char)
+        return (
+            (TokenType.TEXT, "".join(chars)),
+            (TokenType.BLOCK, block_contents),
+        )
+
+    def create_tokens(self, data):
+        tokens = []
+        lineno = 1
+        for token_type, contents in data:
+            tokens.append(Token(token_type, contents, None, lineno))
+            lineno += contents.count(NEW_LINE)
+        return tokens
 
 
 class DebugLexer(Lexer):
-    def _tag_re_split_positions(self):
-        last = 0
-        for match in tag_re.finditer(self.template_string):
-            start, end = match.span()
-            yield last, start
-            yield start, end
-            last = end
-        yield last, len(self.template_string)
+    def start(self):
+        self.startpos = 0
+        self.lineno = 1
+        self.lookahead = None
+        self.len = len(self.template_string) - 1
 
-    # This parallels the use of tag_re.split() in Lexer.tokenize().
-    def _tag_re_split(self):
-        for position in self._tag_re_split_positions():
-            yield self.template_string[slice(*position)], position
+        tokens = []
+        self.verbatim = False
+        while self.pos < self.len:
+            if self.lookahead:
+                token_type, contents = self.lookups[self.lookahead]()
+                tokens.append(self.create_token(token_type, contents))
+                self.lookahead = None
+            elif self.verbatim:
+                text_token, block_token = self.verbatim_block()
+                tokens.append(self.create_token(*text_token))
+                tokens.append(self.create_token(*block_token))
+            else:
+                token_type, contents = self.text()
+                tokens.append(self.create_token(token_type, contents))
+        return tokens
 
-    def tokenize(self):
-        """
-        Split a template string into tokens and annotates each token with its
-        start and end position in the source. This is slower than the default
-        lexer so only use it when debug is True.
-        """
-        # For maintainability, it is helpful if the implementation below can
-        # continue to closely parallel Lexer.tokenize()'s implementation.
-        in_tag = False
-        lineno = 1
-        result = []
-        for token_string, position in self._tag_re_split():
-            if token_string:
-                result.append(self.create_token(token_string, position, lineno, in_tag))
-                lineno += token_string.count("\n")
-            in_tag = not in_tag
-        return result
+    def create_token(self, token_type, contents):
+        endpos = self.pos + 1
+        position = (self.startpos, endpos)
+        self.startpos = endpos
+        token = Token(token_type, contents, position, self.lineno)
+        self.lineno += contents.count("\n")
+        return token
 
 
 class Parser:
