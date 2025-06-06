@@ -391,57 +391,58 @@ class Lexer:
         return self.create_tokens(token_data)
 
     def variable(self):
-        self.pos += 2
-        endtag = self.template_string.find(VARIABLE_TAG_END, self.pos + 1)
+        pos = self.pos + 3
+        endtag = self.template_string.find(VARIABLE_TAG_END, pos)
         if endtag == -1:
             # Got to end of file without closing the block.
             # Treat this as a text token.
-            chars = self.template_string[self.pos + 1 :]
+            chars = self.template_string[pos:]
             self.pos = self.len
             return TokenType.TEXT, "".join([VARIABLE_TAG_START, *chars])
-        chars = self.template_string[self.pos + 1 : endtag].strip()
+        chars = self.template_string[pos:endtag].strip()
         self.pos = endtag + 1
         return TokenType.VAR, chars
 
     def block(self):
-        self.pos += 2
-        endtag = self.template_string.find(BLOCK_TAG_END, self.pos + 1)
+        pos = self.pos + 3
+        endtag = self.template_string.find(BLOCK_TAG_END, pos)
         if endtag == -1:
             # Got to end of file without closing the block.
             # Treat this as a text token.
-            chars = self.template_string[self.pos + 1 :]
+            chars = self.template_string[pos:]
             self.pos = self.len
             return TokenType.TEXT, "".join([BLOCK_TAG_START, *chars])
-        chars = self.template_string[self.pos + 1 : endtag].strip()
+        chars = self.template_string[pos:endtag].strip()
         self.pos = endtag + 1
         if chars.startswith(VERBATIM_BLOCK):
             self.verbatim = f"end{chars}"
         return TokenType.BLOCK, chars
 
     def comment(self):
-        self.pos += 2
-        endtag = self.template_string.find(COMMENT_TAG_END, self.pos + 1)
+        pos = self.pos + 3
+        endtag = self.template_string.find(COMMENT_TAG_END, pos)
         if endtag == -1:
             # Got to end of file without closing the block.
             # Treat this as a text token.
-            chars = self.template_string[self.pos + 1 :]
+            chars = self.template_string[pos + 1 :]
             self.pos = self.len
             return TokenType.COMMENT, "".join([COMMENT_TAG_START, *chars])
-        chars = self.template_string[self.pos + 1 : endtag].strip()
+        chars = self.template_string[pos:endtag].strip()
         self.pos = endtag + 1
         return TokenType.COMMENT, chars
 
     def text(self):
         chars = []
         while True:
-            next_bracket = self.template_string.find(SINGLE_BRACE_START, self.pos + 1)
+            pos = self.pos + 1
+            next_bracket = self.template_string.find(SINGLE_BRACE_START, pos)
             if next_bracket != -1:
-                text = self.template_string[self.pos + 1 : next_bracket]
+                text = self.template_string[pos:next_bracket]
                 self.pos = next_bracket
                 if text:
                     chars.append(text)
             else:
-                text = self.template_string[self.pos + 1 :]
+                text = self.template_string[pos:]
                 chars.append(text)
                 self.pos += len(text)
                 break
