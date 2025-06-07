@@ -82,6 +82,11 @@ SINGLE_BRACE_END = intern("}")
 VERBATIM_BLOCK = intern("verbatim")
 TAG_IDENTIFIERS = {intern("%"), intern("{"), intern("#")}
 NEW_LINE = intern("\n")
+TAG_LOOKUPS = {
+    "{": VARIABLE_TAG_START,
+    "%": BLOCK_TAG_START,
+    "#": COMMENT_TAG_START,
+}
 
 # what to report as the origin for templates that come from non-loader sources
 # (e.g. strings)
@@ -446,12 +451,12 @@ class Lexer:
                 chars += text
                 self.pos += len(text)
                 break
-            peek = self.template_string[self.pos + 1]
-            if peek in TAG_IDENTIFIERS:
-                self.lookahead = SINGLE_BRACE_START + peek
+            try:
+                lookahead = TAG_LOOKUPS[self.template_string[self.pos + 1]]
+                self.lookahead = lookahead
                 self.pos -= 1
                 break
-            else:
+            except KeyError:
                 chars += SINGLE_BRACE_START
         if chars:
             return TokenType.TEXT, chars
