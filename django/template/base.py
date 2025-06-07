@@ -432,7 +432,7 @@ class Lexer:
         return TokenType.COMMENT, chars
 
     def text(self):
-        chars = []
+        chars = ""
         while True:
             pos = self.pos + 1
             next_bracket = self.template_string.find(SINGLE_BRACE_START, pos)
@@ -440,21 +440,21 @@ class Lexer:
                 text = self.template_string[pos:next_bracket]
                 self.pos = next_bracket
                 if text:
-                    chars.append(text)
+                    chars += text
             else:
                 text = self.template_string[pos:]
-                chars.append(text)
+                chars += text
                 self.pos += len(text)
                 break
             peek = self.template_string[self.pos + 1]
             if peek in TAG_IDENTIFIERS:
-                self.lookahead = f"{SINGLE_BRACE_START}{peek}"
+                self.lookahead = SINGLE_BRACE_START + peek
                 self.pos -= 1
                 break
             else:
-                chars.append(SINGLE_BRACE_START)
+                chars += SINGLE_BRACE_START
         if chars:
-            return TokenType.TEXT, "".join(chars)
+            return TokenType.TEXT, chars
         else:
             # Not a Text Token, and the next token type is known.
             # For performance, call that token type directly.
