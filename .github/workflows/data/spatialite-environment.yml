@@ -1,0 +1,8 @@
+name: Spatialite Environment
+channels:
+  - conda-forge
+dependencies:
+  - proj==9.*
+  - libspatialite==5.1.*
+  - gdal==3.10.*
+  - geos==3.13*
