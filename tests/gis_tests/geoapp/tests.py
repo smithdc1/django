@@ -2,6 +2,7 @@ from io import StringIO
 
 from django.contrib.gis import gdal
 from django.contrib.gis.db.models import Extent, MakeLine, Union, functions
+from django.contrib.gis.db.models.functions import Relate
 from django.contrib.gis.geos import (
     GeometryCollection,
     GEOSGeometry,
@@ -531,6 +532,37 @@ class GeoLookupTest(TestCase):
             # On Oracle, COVERS doesn't match for EQUAL objects.
             qs = State.objects.filter(poly__covers=poly)
             self.assertSequenceEqual(qs, [state])
+
+    @skipUnlessDBFeature("supports_relate_lookup")
+    def test_relate_function(self):
+        within_mask = "T*F**F***"
+        ks = State.objects.get(name="Kansas")
+        qs = City.objects.annotate(
+            relate=Relate("point", ks.poly),
+            mask=Relate("point", ks.poly, within_mask),
+        )
+        self.assertQuerySetEqual(
+            list(qs),
+            (
+                ("Houston", "FF0FFF212", False),
+                ("Dallas", "FF0FFF212", False),
+                ("Oklahoma City", "FF0FFF212", False),
+                ("Wellington", "FF0FFF212", False),
+                ("Pueblo", "FF0FFF212", False),
+                ("Lawrence", "0FFFFF212", True),
+                ("Chicago", "FF0FFF212", False),
+                ("Victoria", "FF0FFF212", False),
+            ),
+            lambda c: (c.name, c.relate, c.mask),
+        )
+
+    @skipUnlessDBFeature("supports_relate_lookup")
+    def test_relate_function_geos(self):
+        within_mask = "T*F**F***"
+        ks = State.objects.get(name="Kansas")
+        lawrence = City.objects.get(name="Lawrence")
+        self.assertEqual(lawrence.point.relate(ks.poly), "0FFFFF212")
+        self.assertIs(lawrence.point.relate_pattern(ks.poly, within_mask), True)
 
     @skipUnlessDBFeature("supports_relate_lookup")
     def test_relate_lookup(self):
