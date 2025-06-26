@@ -502,6 +502,25 @@ class NumPoints(GeoFunc):
     arity = 1
 
 
+class Relate(GeoFunc):
+    output_field = TextField()
+    geom_param_pos = (0, 1)
+
+    def __init__(self, expr1, expr2, pattern=None, **extra):
+        expressions = [expr1, expr2]
+        if pattern is not None:
+            self.pattern = self._handle_param(pattern, "pattern", str)
+        else:
+            self.pattern = None
+        super().__init__(*expressions, **extra)
+
+    def as_postgresql(self, compiler, connection, function=None, **extra_context):
+        if self.pattern:
+            extra_context["template"] = "%(function)s(%(expressions)s, '%(pattern)s')"
+            extra_context["pattern"] = self.pattern
+        return super().as_sql(compiler, connection, function=function, **extra_context)
+
+
 class Perimeter(DistanceResultMixin, OracleToleranceMixin, GeoFunc):
     arity = 1
 
