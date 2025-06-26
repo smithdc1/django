@@ -556,6 +556,16 @@ class GeoLookupTest(TestCase):
             lambda c: (c.name, c.relate, c.mask),
         )
 
+        qs = City.objects.filter(name="Lawrence").annotate(
+            relate=Relate("point", ks.poly),
+            mask=Relate("point", ks.poly, within_mask),
+        )
+        self.assertQuerySetEqual(
+            list(qs),
+            (("Lawrence", "0FFFFF212", True),),
+            lambda c: (c.name, c.relate, c.mask),
+        )
+
     @skipUnlessDBFeature("supports_relate_lookup")
     def test_relate_function_geos(self):
         within_mask = "T*F**F***"
