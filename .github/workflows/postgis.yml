@@ -75,11 +75,8 @@ jobs:
           PGPASSWORD=$POSTGRES_PASSWORD psql -U $POSTGRES_USER -d $POSTGRES_DB -h postgres -c "SELECT PostGIS_full_version();"
           uv run python -c "
           from django.contrib.gis import gdal, geos
-          from django.contrib.gis.gdal import SpatialReference
           print(f'GDAL: {gdal.gdal_version()}')
           print(f'GEOS: {geos.geos_version()}')
-          srs = SpatialReference(4326)
-          print(f'PROJ: {srs.proj_version}')
           "
       - name: Create PostgreSQL settings file
         run: mv ./.github/workflows/data/test_postgis.py.tpl ./tests/test_postgis.py
