@@ -69,7 +69,7 @@ jobs:
           POSTGRES_PASSWORD: postgres
         run: |
           PGPASSWORD=$POSTGRES_PASSWORD psql -U $POSTGRES_USER -d $POSTGRES_DB -h postgres -c "SELECT PostGIS_full_version();"
-          gdal --version
+          gdalinfo --version
           proj
           geosop
       - name: Install and upgrade packaging tools
