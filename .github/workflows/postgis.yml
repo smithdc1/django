@@ -83,5 +83,13 @@ jobs:
           "
       - name: Create PostgreSQL settings file
         run: mv ./.github/workflows/data/test_postgis.py.tpl ./tests/test_postgis.py
+      - name: Create non-root user
+        run: |
+          if [ "${{ matrix.package-manager }}" = "apt" ]; then
+            useradd -m -u 1001 testuser
+          else
+            adduser -D -u 1001 testuser
+          fi
+          chown -R testuser:testuser $GITHUB_WORKSPACE
       - name: Run PostGIS tests
-        run: uv run python -Wall tests/runtests.py -v2 --settings=test_postgis
+        run: su testuser -c 'uv run python -Wall tests/runtests.py -v2 --settings=test_postgis'
