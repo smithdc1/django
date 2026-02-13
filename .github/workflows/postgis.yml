@@ -62,7 +62,10 @@ jobs:
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
       - name: Install Python
         run: uv python install 3.14
-      - name: Print PostGIS and geospatial library versions
+      - name: Install dependencies
+        run: uv pip install --python 3.14 --system --upgrade pip wheel
+      - run: uv pip install --python 3.14 --system -r tests/requirements/py3.txt -r tests/requirements/postgres.txt -e .
+      - name: Print versions
         env:
           POSTGRES_DB: geodjango
           POSTGRES_USER: user
@@ -77,9 +80,6 @@ jobs:
           srs = SpatialReference(4326)
           print(f'PROJ: {srs.proj_version}')
           "
-      - name: Install dependencies
-        run: uv pip install --python 3.14 --system --upgrade pip wheel
-      - run: uv pip install --python 3.14 --system -r tests/requirements/py3.txt -r tests/requirements/postgres.txt -e .
       - name: Create PostgreSQL settings file
         run: mv ./.github/workflows/data/test_postgis.py.tpl ./tests/test_postgis.py
       - name: Run PostGIS tests
