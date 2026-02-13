@@ -59,7 +59,7 @@ jobs:
             apk add --no-cache git libmemcached-dev build-base curl ca-certificates
           fi
       - name: Install UV
-        run: curl -LsSf https://astral.sh/uv/install.sh
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
       - name: Install Python
         run: uv python install 3.14
       - name: Print PostGIS and geospatial library versions
