@@ -61,7 +61,9 @@ jobs:
       - name: Install UV
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
       - name: Install Python
-        run: uv python install 3.14
+        run: |
+          uv python install 3.14
+          uv venv --python 3.14
       - name: Install dependencies
         run: uv pip install --python 3.14 -r tests/requirements/py3.txt -r tests/requirements/postgres.txt -e .
       - name: Print versions
@@ -71,7 +73,7 @@ jobs:
           POSTGRES_PASSWORD: postgres
         run: |
           PGPASSWORD=$POSTGRES_PASSWORD psql -U $POSTGRES_USER -d $POSTGRES_DB -h postgres -c "SELECT PostGIS_full_version();"
-          python3.14 -c "
+          uv run python -c "
           from django.contrib.gis import gdal, geos
           from django.contrib.gis.gdal import SpatialReference
           print(f'GDAL: {gdal.gdal_version()}')
@@ -82,4 +84,4 @@ jobs:
       - name: Create PostgreSQL settings file
         run: mv ./.github/workflows/data/test_postgis.py.tpl ./tests/test_postgis.py
       - name: Run PostGIS tests
-        run: python3.14 -Wall tests/runtests.py -v2 --settings=test_postgis
+        run: uv run python -Wall tests/runtests.py -v2 --settings=test_postgis
