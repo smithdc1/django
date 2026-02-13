@@ -69,10 +69,15 @@ jobs:
           POSTGRES_PASSWORD: postgres
         run: |
           PGPASSWORD=$POSTGRES_PASSWORD psql -U $POSTGRES_USER -d $POSTGRES_DB -h postgres -c "SELECT PostGIS_full_version();"
-          gdalinfo --version
-          proj
-          geosop
-      - name: Install and upgrade packaging tools
+          python3.14 -c "
+          from django.contrib.gis import gdal, geos
+          from django.contrib.gis.gdal import SpatialReference
+          print(f'GDAL: {gdal.gdal_version()}')
+          print(f'GEOS: {geos.geos_version()}')
+          srs = SpatialReference(4326)
+          print(f'PROJ: {srs.proj_version}')
+          "
+      - name: Install dependencies
         run: uv pip install --python 3.14 --system --upgrade pip wheel
       - run: uv pip install --python 3.14 --system -r tests/requirements/py3.txt -r tests/requirements/postgres.txt -e .
       - name: Create PostgreSQL settings file
