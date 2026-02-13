@@ -57,7 +57,9 @@ jobs:
             apt install -y git libmemcached-dev curl ca-certificates build-essential zlib1g-dev
           else
             apk add --no-cache git libmemcached-dev build-base curl ca-certificates build-base zlib-dev
+            # Create symlinks for GDAL and GEOS in Alpnie
             ln -sf /usr/lib/libgdal.so.36 /usr/lib/libgdal.so
+            ln -sf libgeos_c.so.1 /usr/lib/libgeos_c.so
           fi
       - name: Install UV
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
