@@ -54,9 +54,9 @@ jobs:
         run: |
           if [ "${{ matrix.package-manager }}" = "apt" ]; then
             apt update
-            apt install -y git libmemcached-dev curl ca-certificates build-essential
+            apt install -y git libmemcached-dev curl ca-certificates build-essential zlib1g-dev
           else
-            apk add --no-cache git libmemcached-dev build-base curl ca-certificates build-base
+            apk add --no-cache git libmemcached-dev build-base curl ca-certificates build-base zlib-dev
           fi
       - name: Install UV
         run: curl -LsSf https://astral.sh/uv/install.sh | sh
