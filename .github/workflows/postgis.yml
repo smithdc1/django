@@ -63,8 +63,7 @@ jobs:
       - name: Install Python
         run: uv python install 3.14
       - name: Install dependencies
-        run: uv pip install --python 3.14 --system --upgrade pip wheel
-      - run: uv pip install --python 3.14 --system -r tests/requirements/py3.txt -r tests/requirements/postgres.txt -e .
+        run: uv pip install --python 3.14 -r tests/requirements/py3.txt -r tests/requirements/postgres.txt -e .
       - name: Print versions
         env:
           POSTGRES_DB: geodjango
