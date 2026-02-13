@@ -73,11 +73,9 @@ jobs:
           proj
           geosop
       - name: Install and upgrade packaging tools
-        run: uv pip install --upgrade pip wheel
-      - run: uv pip install -r tests/requirements/py3.txt -r tests/requirements/postgres.txt -e .
+        run: uv pip install --python 3.14 --system --upgrade pip wheel
+      - run: uv pip install --python 3.14 --system -r tests/requirements/py3.txt -r tests/requirements/postgres.txt -e .
       - name: Create PostgreSQL settings file
         run: mv ./.github/workflows/data/test_postgis.py.tpl ./tests/test_postgis.py
       - name: Run PostGIS tests
-        run: uv run tests/runtests.py -v2 --settings=test_postgis
-        env:
-          PYTHONWARNINGS: all
+        run: python3.14 -Wall tests/runtests.py -v2 --settings=test_postgis
