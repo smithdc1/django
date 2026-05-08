@@ -38,10 +38,8 @@ jobs:
         # Pinned to v4.0.1
         uses: conda-incubator/setup-miniconda@8ee1f361103df19b6f8c8655fd3967a8ecb162d5
         with:
-          miniforge-version: "24.1.2-0"
           activate-environment: geodjango
           environment-file: ${{ matrix.conda-environment-file }}
-          use-mamba: true
           channel-priority: strict
       - name: Install libmemcached-dev for pylibmc
         run: sudo apt install -y libmemcached-dev
