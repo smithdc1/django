@@ -24,14 +24,14 @@ jobs:
       matrix:
         include:
           - conda-environment-file: ".github/workflows/data/conda/geolibs-pg15.yml"
-            pg-major: "15"
+            pg_major: "15"
           - conda-environment-file: ".github/workflows/data/conda/geolibs-pg16.yml"
-            pg-major: "16"
+            pg_major: "16"
           - conda-environment-file: ".github/workflows/data/conda/geolibs-pg17.yml"
-            pg-major: "17"
+            pg_major: "17"
           - conda-environment-file: ".github/workflows/data/conda/geolibs-pg18.yml"
-            pg-major: "18"
-    name: Conda PostGIS / PG${{ matrix.pg-major }}
+            pg_major: "18"
+    name: Conda PostGIS / PG${{ matrix.pg_major }}
 
     steps:
       - name: Checkout
@@ -70,7 +70,8 @@ jobs:
 
       - name: Print geospatial versions
         shell: bash -el {0}
-        run: python -c "from django.contrib.gis import gdal, geos; print(f'GDAL: {gdal.gdal_version()}'); print(f'GEOS: {geos.geos_version()}')"
+        run: |
+          python -c "from django.contrib.gis import gdal, geos; print(f'GDAL: {gdal.gdal_version()}'); print(f'GEOS: {geos.geos_version()}')"
 
       - name: Run PostGIS tests
         shell: bash -el {0}
