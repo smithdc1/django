@@ -45,8 +45,7 @@ jobs:
         run: sudo apt install -y libmemcached-dev
       - name: Install and upgrade packaging tools
         run: python -m pip install --upgrade pip wheel
-      - name: Install Django test dependencies
-        run: python -m pip install -r tests/requirements/py3.txt -r tests/requirements/postgres.txt -e .
+      - run: python -m pip install -r tests/requirements/py3.txt -r tests/requirements/postgres.txt -e .
       - name: Create PostgreSQL settings file
         run: mv ./.github/workflows/data/test_postgis.py.tpl ./tests/test_postgis.py
       - name: Initialize and start local PostgreSQL
