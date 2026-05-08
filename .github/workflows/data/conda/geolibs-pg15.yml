@@ -8,3 +8,4 @@ dependencies:
   - libgdal=3.7.*
   - geos=3.12.*
   - proj=9.2.*
+  - icu
