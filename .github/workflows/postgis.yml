@@ -49,6 +49,9 @@ jobs:
           use-mamba: true
           channel-priority: strict
 
+      - name: Install libmemcached-dev for pylibmc
+        run: sudo apt install -y libmemcached-dev
+
       - name: Install and upgrade packaging tools
         shell: bash -el {0}
         run: python -m pip install --upgrade pip wheel
