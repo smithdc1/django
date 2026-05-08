@@ -23,10 +23,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - conda-environment-file: ".github/workflows/data/conda/geolibs-pg15.yml"
-            pg-major: "15"
-          - conda-environment-file: ".github/workflows/data/conda/geolibs-pg16.yml"
-            pg-major: "16"
           - conda-environment-file: ".github/workflows/data/conda/geolibs-pg17.yml"
             pg-major: "17"
           - conda-environment-file: ".github/workflows/data/conda/geolibs-pg18.yml"
