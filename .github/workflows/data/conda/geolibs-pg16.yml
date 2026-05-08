@@ -1,0 +1,10 @@
+name: geodjango
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - postgresql=16.*
+  - postgis=3.4.*
+  - libgdal=3.9.*
+  - geos=3.12.*
+  - proj=9.5.*
